@@ -339,7 +339,7 @@ ul.exact a { margin-left: 6px; }
 // Load the data files, then start the app (kept in the script below, which waits for them)
 (function () {
   const files = { data: "profiles", fields: "fields", careers: "careers", majors: "majors", names: "names", pseo: "pseo" };
-  Promise.all(Object.entries(files).map(([id, f]) => fetch("data/" + f + ".json?v=1792881982").then((r) => {
+  Promise.all(Object.entries(files).map(([id, f]) => fetch("data/" + f + ".json?v=1792885118").then((r) => {
     if (!r.ok) throw new Error(f + ": " + r.status);
     return r.text();
   }).then((txt) => { document.getElementById(id).textContent = txt; }))).then(() => {
