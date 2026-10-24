@@ -1,0 +1,1302 @@
+<title>Pathways Program Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sticky top bar with four places (Home, Find your fit, Explore, Compare); each place is one centered column up to 1080px.
+   Detail pages stack sections; the explorer puts filters in a left rail that becomes a drawer on phones. */
+:root {
+  --bg: #f5f6fa; --surface: #ffffff; --raise: #eef0f8; --ink: #141a33; --muted: #5b6380; --line: #dde1ee;
+  --accent: #2f4bd8; --accent-ink: #ffffff; --accent-soft: #e3e8ff; --spark: #f2a93b; --spark-soft: #fdf0d9;
+  --good: #24794a; --good-soft: #def3e6; --warn: #9a5800; --warn-soft: #fbeccf;
+  --s1: #2f4bd8; --s2: #8fa0f0; --s3: #c7cee6; --s4: #f2a93b;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1324; --surface: #171c33; --raise: #1e2440; --ink: #e9ecf7; --muted: #a0a8c6; --line: #2a3152;
+  --accent: #8ea0ff; --accent-ink: #0f1324; --accent-soft: #252e5c; --spark: #f5b955; --spark-soft: #3a2f1a;
+  --good: #7fd6a2; --good-soft: #1c3a2a; --warn: #f3bd6a; --warn-soft: #3a2e1a;
+  --s1: #8ea0ff; --s2: #5566b8; --s3: #3a4268; --s4: #f5b955; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1324; --surface: #171c33; --raise: #1e2440; --ink: #e9ecf7; --muted: #a0a8c6; --line: #2a3152;
+  --accent: #8ea0ff; --accent-ink: #0f1324; --accent-soft: #252e5c; --spark: #f5b955; --spark-soft: #3a2f1a;
+  --good: #7fd6a2; --good-soft: #1c3a2a; --warn: #f3bd6a; --warn-soft: #3a2e1a;
+  --s1: #8ea0ff; --s2: #5566b8; --s3: #3a4268; --s4: #f5b955; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: var(--accent); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.col { max-width: 1080px; margin: 0 auto; }
+
+/* top bar */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .col { display: flex; align-items: center; gap: 20px; padding-block: 10px; flex-wrap: wrap; }
+.brand { font: 800 22px var(--display); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.brand svg { width: 26px; height: 26px; }
+nav { display: flex; gap: 4px; flex-wrap: wrap; }
+@media (max-width: 520px) { .top .col { gap: 6px; } nav { flex-wrap: nowrap; overflow-x: auto; width: 100%; } nav a { white-space: nowrap; padding: 6px 10px; } }
+nav a { text-decoration: none; color: var(--muted); font-weight: 600; padding: 6px 12px; border-radius: 999px; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--ink); }
+nav .count { font: 500 12px var(--mono); background: var(--spark); color: #1a1a1a; border-radius: 999px; padding: 0 6px; margin-left: 4px; }
+main { padding-block: 28px 80px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+.eyebrow { font: 600 12px var(--body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 11px 20px; font-weight: 700; cursor: pointer; text-decoration: none; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: var(--raise); color: var(--ink); }
+.btn.small { padding: 6px 12px; font-size: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 600 13px var(--body); padding: 4px 10px; border-radius: 999px; background: var(--raise); color: var(--ink); border: 1px solid transparent; }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.spark { background: var(--spark-soft); color: var(--ink); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; min-width: 0; }
+.stack { display: grid; gap: 20px; }
+
+/* home */
+.hero { display: grid; justify-items: center; text-align: center; padding-block: 36px 8px; }
+.hero h1 { font-size: clamp(34px, 5.2vw, 56px); line-height: 1.05; letter-spacing: -0.03em; font-weight: 800; max-width: 17ch; margin-top: 10px; }
+.hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, var(--spark) 62%); }
+.hero p { font-size: 19px; color: var(--muted); max-width: 52ch; margin: 16px auto 26px; }
+.starter { width: 100%; max-width: 680px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 10px; box-shadow: 0 10px 30px -18px rgba(20, 30, 80, .35); text-align: left; }
+.starter .tabs { display: flex; gap: 4px; padding: 2px 2px 10px; flex-wrap: wrap; }
+.starter .tabs button { font: 600 15px var(--body); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+.starter .tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--ink); }
+.starter form { display: flex; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 6px 6px 6px 16px; }
+.starter form[hidden] { display: none; }
+.starter form:focus-within { outline: 2px solid var(--accent); }
+.starter input { flex: 1; min-width: 0; border: 0; background: transparent; font: 17px var(--body); color: var(--ink); }
+.starter input:focus { outline: none; }
+.trust { display: flex; gap: 8px 22px; flex-wrap: wrap; justify-content: center; margin-top: 18px; color: var(--muted); font-size: 15px; }
+.trust b { font-family: var(--mono); color: var(--ink); font-weight: 500; }
+.journey .door { position: relative; }
+.journey .stepno { font: 700 13px var(--mono); color: var(--accent); }
+.journey .door.feature .stepno { color: var(--accent-ink); }
+.path-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.path-row .path-step { align-content: start; }
+@media (max-width: 860px) { .path-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .starter .tabs button { font-size: 14px; padding: 7px 10px; } .path-row { grid-template-columns: 1fr; } .starter form { flex-wrap: wrap; } .starter form .btn { width: 100%; } }
+.searchbox { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 6px 6px 18px; max-width: 520px; }
+.searchbox input { flex: 1; min-width: 0; border: 0; background: transparent; font: 17px var(--body); color: var(--ink); }
+.searchbox input:focus { outline: none; }
+.searchbox:focus-within { outline: 2px solid var(--accent); }
+.path-preview { display: grid; gap: 10px; }
+.path-step { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.path-step .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 700 15px var(--display); background: var(--accent-soft); color: var(--ink); }
+.path-step b { display: block; }
+.path-step .num { font-size: 15px; }
+.doors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 8px; }
+.door { display: grid; gap: 8px; align-content: start; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; transition: border-color .15s, transform .15s; }
+.door:hover { border-color: var(--accent); transform: translateY(-2px); }
+.door h3 { font-size: 22px; }
+.door .go { color: var(--accent); font-weight: 700; margin-top: 4px; }
+.door.feature { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.door.feature .muted, .door.feature .go { color: var(--accent-ink); opacity: .9; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 36px; }
+.doors.journey { grid-template-columns: repeat(4, 1fr); margin-top: 14px; }
+@media (max-width: 1000px) { .doors.journey { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .doors.journey { grid-template-columns: 1fr; } }
+.stat .num { font-size: 28px; font-weight: 500; display: block; }
+.section-title { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin: 44px 0 14px; flex-wrap: wrap; }
+.section-title h2 { font-size: 26px; }
+.areas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.area-card { text-align: left; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 4px; }
+.area-card:hover { border-color: var(--accent); }
+.area-card b { font-family: var(--display); font-size: 17px; }
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.how .panel h3 { font-size: 18px; margin-bottom: 6px; }
+@media (max-width: 860px) { .hero { grid-template-columns: 1fr; } .doors, .how { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2, 1fr); } }
+
+/* fit guide */
+.fit-wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 22px; }
+.progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.progress span { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+.q h2 { font-size: clamp(24px, 4vw, 32px); }
+.q .hint { margin-top: 6px; }
+.options { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 18px; }
+.opt { text-align: left; cursor: pointer; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 2px; }
+.opt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.opt b { font-weight: 700; }
+.fit-nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.match { display: grid; gap: 14px; }
+.match-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
+.match-head h3 { font-size: 26px; }
+.meter { width: 120px; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+.meter span { display: block; height: 100%; background: var(--spark); }
+.why { margin: 0; padding-left: 18px; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 680px) { .split { grid-template-columns: 1fr; } }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.mini-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.mini-table td { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.mini-table td.num { text-align: right; white-space: nowrap; padding-left: 10px; }
+.mini-table button { all: unset; cursor: pointer; color: var(--accent); }
+.mini-table button:focus-visible { outline: 2px solid var(--accent); }
+
+/* explore */
+.explore { display: grid; grid-template-columns: 270px 1fr; gap: 24px; align-items: start; }
+.filters { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); display: grid; gap: 16px; max-height: calc(100vh - 100px); overflow: auto; }
+.filters label, .filters .lbl { display: grid; gap: 4px; font: 600 13px var(--body); color: var(--muted); }
+.filters input[type="search"], .filters select, .sortbar select { font: 15px var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; }
+.filters input[type="range"] { width: 100%; accent-color: var(--accent); }
+.check { display: flex !important; grid-template-columns: none; align-items: center; gap: 8px; color: var(--ink) !important; font-weight: 600; }
+.check input { accent-color: var(--accent); width: 18px; height: 18px; }
+.results-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.sortbar { display: flex; align-items: center; gap: 8px; }
+.sortbar select { width: auto; }
+.cards { display: grid; gap: 10px; }
+.card { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.card:hover { border-color: var(--accent); }
+.card .t { font: 700 17px var(--display); cursor: pointer; background: none; border: 0; padding: 0; text-align: left; color: var(--ink); }
+.card .t:hover { color: var(--accent); }
+.card .s { color: var(--muted); font-size: 14px; }
+.card .figs { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.card .figs b { display: block; font: 500 16px var(--mono); color: var(--ink); }
+.card .side { display: grid; gap: 8px; justify-items: end; align-content: start; grid-column: 2; grid-row: 1; }
+.card .main { grid-column: 1; grid-row: 1; }
+.add { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.add[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.filter-toggle { display: none; }
+@media (max-width: 860px) {
+  .explore { grid-template-columns: 1fr; }
+  .filters { position: static; max-height: none; display: none; }
+  .filters.open { display: grid; }
+  .filter-toggle { display: inline-flex; }
+  .card { grid-template-columns: 1fr; } .card .main, .card .side { grid-column: 1; grid-row: auto; } .card .side { justify-items: start; grid-auto-flow: column; justify-content: start; }
+}
+
+/* detail */
+.back { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; }
+.detail-head h1 { font-size: clamp(30px, 5vw, 44px); letter-spacing: -0.02em; margin-top: 6px; }
+.detail-head .sub { color: var(--muted); margin-top: 6px; }
+.detail-head .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; }
+.fig .n { font: 500 28px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+.fig .l { color: var(--muted); font-size: 14px; }
+.panel h3.h { font: 600 13px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px; }
+.bar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--line); margin-top: 16px; }
+.bar span { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.compare-bars { display: grid; gap: 10px; }
+.crow { display: grid; grid-template-columns: minmax(0, 240px) 1fr auto; gap: 12px; align-items: center; font-size: 14px; }
+.crow .track { height: 10px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.crow .fill { height: 100%; background: var(--s1); }
+.crow .fill.b { background: var(--s2); }
+.crow .v { font: 500 14px var(--mono); min-width: 80px; text-align: right; }
+@media (max-width: 560px) { .crow { grid-template-columns: 1fr auto; } .crow .track { grid-column: 1 / -1; grid-row: 2; } }
+.rank { display: grid; gap: 6px; }
+.rank .scale { position: relative; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--s3), var(--s2), var(--s1)); }
+.rank .pin { position: absolute; top: -5px; width: 4px; height: 22px; background: var(--ink); border-radius: 2px; transform: translateX(-2px); }
+.rank .ends { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.callout { background: var(--spark-soft); border-radius: 10px; padding: 12px 14px; font-size: 15px; }
+.callout.big { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+ul.names { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+ul.names li { font-size: 14px; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 680px) { .cols { grid-template-columns: 1fr; } }
+.cols h4 { margin: 0 0 6px; font-size: 15px; }
+details { border-top: 1px solid var(--line); padding-block: 10px; }
+details:first-of-type { border-top: 0; }
+summary { cursor: pointer; font-weight: 600; }
+summary .meta { font: 400 13px var(--mono); color: var(--muted); margin-left: 6px; }
+.courses { margin: 8px 0 4px; padding: 0; list-style: none; display: grid; gap: 2px; }
+.courses li { font-size: 14px; display: grid; grid-template-columns: 110px 1fr; gap: 10px; }
+.courses code { font: 500 13px var(--mono); color: var(--accent); }
+.courses li.or { padding-left: 16px; }
+.courses li.or code::before { content: "or "; color: var(--muted); }
+.sources { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 6px; }
+
+/* compare */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table.cmp { border-collapse: collapse; width: 100%; min-width: 560px; }
+table.cmp th, table.cmp td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+table.cmp th[scope="row"] { color: var(--muted); font-weight: 600; font-size: 14px; width: 190px; }
+table.cmp td.best { background: var(--good-soft); }
+.empty { text-align: center; padding: 48px 16px; display: grid; gap: 12px; justify-items: center; }
+
+/* compare tray */
+.tray { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--ink); color: var(--bg); padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.tray .col { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.tray .btn.primary { background: var(--spark); color: #1a1a1a; }
+footer { border-top: 1px solid var(--line); padding-block: 24px 90px; color: var(--muted); font-size: 14px; }
+/* majors & careers */
+.list-head { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+.list-head label { display: grid; gap: 4px; font: 600 13px var(--body); color: var(--muted); flex: 1 1 200px; min-width: 0; }
+.list-head input, .list-head select { font: 15px var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.tile { text-align: left; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 6px; align-content: start; color: var(--ink); }
+.tile:hover { border-color: var(--accent); }
+.tile b { font: 700 17px/1.25 var(--display); }
+.tile .row { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.tile .row b { font: 500 15px var(--mono); color: var(--ink); display: block; }
+.up { color: var(--good); } .down { color: var(--warn); }
+.tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.tasks li { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.tasks li:last-child { border-bottom: 0; padding-bottom: 0; }
+.tasks .freq { font: 500 12px var(--mono); white-space: nowrap; padding: 2px 8px; border-radius: 999px; background: var(--raise); }
+.tasks .freq.hi { background: var(--accent-soft); }
+.meters { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 24px; }
+.meter-row { display: grid; gap: 4px; font-size: 14px; }
+.meter-row .lab { display: flex; justify-content: space-between; gap: 8px; }
+.meter-row .lab span:last-child { color: var(--muted); font-size: 13px; }
+.dots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+.dots i { height: 8px; border-radius: 2px; background: var(--line); }
+.dots i.on { background: var(--s1); }
+.ladder { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: stretch; }
+.ladder .stepcol { display: grid; gap: 8px; align-content: start; }
+.ladder .arrow { align-self: center; color: var(--muted); font-size: 22px; }
+.ladder .stepcol h4 { margin: 0; font: 600 12px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.step { text-align: left; cursor: pointer; background: var(--raise); border: 1px solid transparent; border-radius: 10px; padding: 10px 12px; color: var(--ink); display: grid; gap: 2px; }
+.step:hover { border-color: var(--accent); }
+.step.me { background: var(--accent); color: var(--accent-ink); cursor: default; }
+.step small { opacity: .8; }
+@media (max-width: 760px) { .ladder { grid-template-columns: 1fr; } .ladder .arrow { transform: rotate(90deg); justify-self: center; } }
+.paybar { position: relative; height: 44px; margin: 8px 0 4px; }
+.paybar .track { position: absolute; left: 0; right: 0; top: 18px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--s3), var(--s1)); }
+.paybar .tick { position: absolute; top: 12px; width: 2px; height: 20px; background: var(--ink); transform: translateX(-1px); }
+.paylabels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; font-size: 13px; }
+.paylabels div { display: grid; gap: 2px; }
+.paylabels b { font: 500 15px var(--mono); }
+.paylabels span { color: var(--muted); }
+@media (max-width: 560px) { .paylabels { grid-template-columns: repeat(2, 1fr); } }
+.prefs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.prefs .lbl { display: grid; gap: 6px; font: 600 13px var(--body); color: var(--muted); }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 10px; font-size: 13px; cursor: pointer; color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.picked { display: flex; flex-wrap: wrap; gap: 6px; }
+.picked .chip button { all: unset; cursor: pointer; font-weight: 700; padding-left: 2px; }
+.score { font: 700 15px var(--mono); background: var(--spark-soft); border-radius: 8px; padding: 4px 8px; }
+.reasons { display: flex; flex-wrap: wrap; gap: 6px; }
+.reasons span { font-size: 12px; background: var(--good-soft); color: var(--good); border-radius: 999px; padding: 2px 8px; font-weight: 600; }
+.twoway { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.twoway form { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.twoway h3 { font-size: 20px; }
+.twoway .row { display: flex; gap: 8px; }
+.twoway input { flex: 1; min-width: 0; font: 16px var(--body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.focus-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--accent-soft); border-radius: 10px; padding: 12px 16px; }
+@media (max-width: 760px) { .twoway { grid-template-columns: 1fr; } }
+.fedname { font-size: 13px; color: var(--muted); }
+.detail-head .fedname { margin-top: 4px; }
+ul.exact { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 8px; }
+ul.exact li { padding: 10px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; }
+ul.exact a { margin-left: 6px; }
+.growth { display: grid; gap: 14px; margin-bottom: 12px; }
+.g-row { display: grid; grid-template-columns: 110px 1fr 260px; gap: 14px; align-items: center; }
+.g-track { position: relative; height: 14px; background: var(--bg); border-radius: 999px; border: 1px solid var(--line); }
+.g-range { position: absolute; top: 2px; bottom: 2px; background: var(--accent-soft); border-radius: 999px; }
+.g-mid { position: absolute; top: -4px; width: 4px; height: 20px; margin-left: -2px; border-radius: 2px; background: var(--accent); }
+@media (max-width: 760px) { .g-row { grid-template-columns: 1fr; gap: 6px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="top gut">
+  <div class="col">
+    <a class="brand" href="#home" aria-label="Pathways home">
+      <svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="5" cy="21" r="3.2" fill="var(--accent)"/><circle cx="21" cy="5" r="3.2" fill="var(--spark)"/><path d="M5 21 C 5 12, 21 14, 21 5" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="2.5 3" stroke-linecap="round"/></svg>
+      Pathways
+    </a>
+    <nav aria-label="Main">
+      <a href="#home" data-view="home">Home</a>
+      <a href="#fit" data-view="fit">Find your fit</a>
+      <a href="#majors" data-view="majors">Majors</a>
+      <a href="#careers" data-view="careers">Careers</a>
+      <a href="#programs" data-view="programs">Programs</a>
+      <a href="#compare" data-view="compare">Compare<span class="count" id="navCount" hidden></span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="gut"><div class="col" id="app"></div></main>
+
+<footer class="gut"><div class="col">
+  Early test version. Pay comes from the U.S. Census Bureau's Post-Secondary Employment Outcomes where available (graduates with steady work, 1, 5 and 10 years after graduating) and otherwise from the U.S. Department of Education's College Scorecard (graduates who received federal aid, including part-time work). Debt comes from the College Scorecard. Graduate outcomes (employers, job titles, placement) come from each school's own published report. Anything marked "Not yet checked" hasn't been reviewed by a person.
+</div></footer>
+
+<div class="tray gut" id="tray" hidden><div class="col">
+  <span id="trayText"></span>
+  <span style="display:flex;gap:8px"><button class="btn small ghost" id="trayClear" style="background:transparent;color:inherit;border:1px solid currentColor">Clear</button><a class="btn small primary" href="#compare">Compare now</a></span>
+</div></div>
+
+<div id="loading" class="muted" style="padding:48px 16px;text-align:center">Loading college data…</div>
+<script id="data" type="application/json"></script>
+<script id="fields" type="application/json"></script>
+<script id="careers" type="application/json"></script>
+<script id="majors" type="application/json"></script>
+<script id="names" type="application/json"></script>
+<script id="pseo" type="application/json"></script>
+<script>
+// Load the data files, then start the app (kept in the script below, which waits for them)
+(function () {
+  const files = { data: "profiles", fields: "fields", careers: "careers", majors: "majors", names: "names", pseo: "pseo" };
+  Promise.all(Object.entries(files).map(([id, f]) => fetch("data/" + f + ".json?v=1792881982").then((r) => {
+    if (!r.ok) throw new Error(f + ": " + r.status);
+    return r.text();
+  }).then((txt) => { document.getElementById(id).textContent = txt; }))).then(() => {
+    document.getElementById("loading").remove();
+    const app = document.createElement("script");
+    app.textContent = document.getElementById("app-code").textContent;
+    document.body.appendChild(app);
+  }).catch((e) => { document.getElementById("loading").textContent = "Couldn't load the data (" + e.message + "). Please refresh."; });
+})();
+</script>
+<script id="app-code" type="text/plain">
+"use strict";
+const PROFILES = JSON.parse(document.getElementById("data").textContent);
+const F = JSON.parse(document.getElementById("fields").textContent);
+const CAREERS = JSON.parse(document.getElementById("careers").textContent);
+const MAJORS = JSON.parse(document.getElementById("majors").textContent);
+const NAMES = JSON.parse(document.getElementById("names").textContent);
+const PSEO_ALL = JSON.parse(document.getElementById("pseo").textContent), PSEO = PSEO_ALL.u, CIP2 = PSEO_ALL.cip2, PSEO_NAT = PSEO_ALL.nat || { earn: {}, ind: {} };
+const SECTORS = { "11": "Farming, forestry and fishing", "21": "Mining, oil and gas", "22": "Utilities", "23": "Construction",
+  "31-33": "Manufacturing", "42": "Wholesale trade", "44-45": "Retail", "48-49": "Transportation and warehousing",
+  "51": "Information, media and software", "52": "Finance and insurance", "53": "Real estate",
+  "54": "Professional services (consulting, engineering, law, accounting)", "55": "Corporate headquarters",
+  "56": "Staffing and business support", "61": "Education", "62": "Health care and social services",
+  "71": "Arts, entertainment and recreation", "72": "Hotels and restaurants", "81": "Other services", "92": "Government" };
+const CENSUS = { name: "Post-Secondary Employment Outcomes (PSEO)", url: "https://lehd.ces.census.gov/data/pseo_explorer.html" };
+const pseoEarn = (r) => PSEO[r.uid]?.earn?.[r.cip] || null;
+const pseoInd = (r) => PSEO[r.uid]?.ind?.[r.cip.slice(0, 2)] || null;
+function notWorking(r) {
+  const ind = pseoInd(r), emp = ind?.n?.[0], nme = ind?.nme?.[0];
+  return emp != null && nme != null && emp + nme >= 20 ? Math.round(nme / (emp + nme) * 100) : null;
+}
+const app = document.getElementById("app");
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = (n) => n == null ? "—" : "$" + Math.round(n).toLocaleString("en-US");
+const kmoney = (n) => n == null ? "—" : "$" + Math.round(n / 1000) + "k";
+const median = (xs) => { const a = xs.filter((x) => x != null).sort((x, y) => x - y); if (!a.length) return null; const m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
+const ONET = { name: "O*NET 31.0 Database, U.S. Department of Labor (CC BY 4.0)", url: "https://www.onetcenter.org/database.html" };
+const OEWS = { name: "BLS Occupational Employment and Wage Statistics, May 2025", url: "https://www.bls.gov/oes/" };
+const PROJ = { name: "BLS Employment Projections, 2025–35", url: "https://www.bls.gov/emp/" };
+const SCORECARD = { name: "College Scorecard, field of study data (June 2026 release)", url: "https://collegescorecard.ed.gov/data/" };
+
+/* ---------- career areas: groups of federal field codes ---------- */
+const AREAS = [
+  { key: "tech", name: "Computing & technology", cips: ["11"], blurb: "Software, data, cybersecurity and IT.",
+    careers: ["Software developer", "Data analyst", "Cybersecurity analyst", "IT consultant", "Product manager", "Web developer"] },
+  { key: "eng", name: "Engineering", cips: ["14", "15"], blurb: "Design and build machines, structures, systems and products.",
+    careers: ["Mechanical engineer", "Civil engineer", "Electrical engineer", "Manufacturing engineer", "Systems engineer", "Project engineer"] },
+  { key: "biz", name: "Business & finance", cips: ["52"], blurb: "Money, markets, management, marketing and analytics.",
+    careers: ["Financial analyst", "Accountant", "Business analyst", "Consultant", "Marketing coordinator", "Sales representative"] },
+  { key: "health", name: "Health & nursing", cips: ["51"], blurb: "Care for patients and keep people healthy.",
+    careers: ["Registered nurse", "Physician assistant (after grad school)", "Physical therapist (after grad school)", "Health administrator", "Pharmacist (after grad school)", "Medical lab scientist"] },
+  { key: "life", name: "Biology & life sciences", cips: ["26"], blurb: "How living things work, from cells to ecosystems.",
+    careers: ["Research associate", "Lab technician", "Doctor (after medical school)", "Biotech specialist", "Environmental scientist", "Science teacher"] },
+  { key: "phys", name: "Math & physical sciences", cips: ["27", "40"], blurb: "Math, statistics, chemistry, physics and earth science.",
+    careers: ["Actuary", "Statistician", "Chemist", "Quantitative analyst", "Geoscientist", "Math teacher"] },
+  { key: "psych", name: "Psychology", cips: ["42"], blurb: "Why people think, feel and act the way they do.",
+    careers: ["Human resources specialist", "Behavior technician", "Counselor (after grad school)", "Market researcher", "Case manager", "Psychologist (after grad school)"] },
+  { key: "social", name: "Law, policy & public service", cips: ["45", "44", "43", "22", "19"], blurb: "Government, economics, social work, criminal justice and law.",
+    careers: ["Policy analyst", "Social worker", "Lawyer (after law school)", "Police or federal agent", "Economist", "Nonprofit program manager"] },
+  { key: "edu", name: "Education", cips: ["13"], blurb: "Teach and support learners of every age.",
+    careers: ["Elementary teacher", "High school teacher", "Special education teacher", "School counselor (after grad school)", "Instructional designer", "Education program coordinator"] },
+  { key: "comm", name: "Communication & media", cips: ["09", "10"], blurb: "Journalism, public relations, advertising and digital media.",
+    careers: ["Public relations specialist", "Social media manager", "Journalist", "Content strategist", "Video producer", "Communications coordinator"] },
+  { key: "arts", name: "Arts & design", cips: ["50", "04"], blurb: "Visual art, design, music, theater, film and architecture.",
+    careers: ["Graphic designer", "UX designer", "Architect (after licensing)", "Animator", "Musician or performer", "Art director"] },
+  { key: "hum", name: "Humanities & languages", cips: ["23", "16", "38", "39", "54", "24", "05", "30"], blurb: "Writing, history, philosophy, languages and culture.",
+    careers: ["Writer or editor", "Paralegal", "Teacher", "Translator", "Museum or archive specialist", "Lawyer (after law school)"] },
+  { key: "env", name: "Agriculture & environment", cips: ["01", "03"], blurb: "Food, farming, forests, wildlife and conservation.",
+    careers: ["Agricultural scientist", "Conservation scientist", "Farm or ranch manager", "Environmental consultant", "Food scientist", "Park ranger"] },
+  { key: "sport", name: "Sports, fitness & recreation", cips: ["31"], blurb: "Exercise science, kinesiology, coaching and recreation.",
+    careers: ["Athletic trainer (after grad school)", "Strength coach", "Physical therapist (after grad school)", "Recreation manager", "Fitness director", "Sports marketing coordinator"] },
+];
+const OTHER = { key: "other", name: "Other fields", cips: [], blurb: "", careers: [] };
+const areaOfCip = {};
+for (const a of AREAS) for (const c of a.cips) areaOfCip[c] = a;
+const areaOf = (cip) => areaOfCip[cip.slice(0, 2)] || OTHER;
+const areaByKey = Object.fromEntries([...AREAS, OTHER].map((a) => [a.key, a]));
+
+/* ---------- rows: one per school and field of study ---------- */
+const ROWS = F.rows.map(([si, cip, e1, e4, debt, n]) => {
+  const s = F.schools[si];
+  return { key: s[0] + "_" + cip, uid: s[0], school: s[1], city: s[2], state: s[3], control: s[4] || "Not listed",
+           cip, title: F.titles[cip], area: areaOf(cip).key, e1, e4, debt, n, names: NAMES[s[0] + "_" + cip] || [],
+           sc1: e1, sc4: e4, src: "scorecard", lateYrs: 4 };
+});
+// Census pay leaves out graduates with no job or very low (part-time) earnings, so it is the
+// main figure wherever the Census has it. Scorecard pay (includes part-time work) fills the gaps.
+for (const r of ROWS) {
+  const ce = PSEO[r.uid]?.earn?.[r.cip];
+  if (ce && ce[1] != null) Object.assign(r, { e1: ce[1], e4: ce[4], src: "census", lateYrs: 5 });
+}
+// Schools publish an average or a median starting salary; use whichever the report has
+const startSal = (o) => o.avg_starting_salary != null ? { v: o.avg_starting_salary, kind: "average" } : { v: o.median_starting_salary, kind: "median" };
+const srcNote = (r) => r.src === "census" ? "graduates with steady work" : "includes part-time";
+// The school's own program name(s) when we have them, otherwise the federal field name
+// When a search is typed, lead with the program name it matched
+const nameOf = (r, q = "") => {
+  if (!r.names.length) return r.title;
+  const ws = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const hit = (ws.length && r.names.find((x) => ws.every((w) => x[0].toLowerCase().includes(w)))) || r.names[0];
+  return hit[0] + (r.names.length > 1 ? ` and ${r.names.length - 1} more` : "");
+};
+// Show the degree only when the name doesn't already say it
+const degreeNote = (n, d) => d && !n.replace(/\./g, "").toLowerCase().includes(d.replace(/\./g, "").toLowerCase()) && !/\bB\.?[A-Z]|Bachelor/.test(n) ? d : "";
+const rowByKey = new Map(ROWS.map((r) => [r.key, r]));
+const profileFor = (uid, cip) => PROFILES.filter((p) => p.university_id === uid && p.cip4 === cip);
+const profileKeys = new Set(PROFILES.map((p) => p.university_id + "_" + p.cip4));
+
+const byCip = {};
+for (const r of ROWS) (byCip[r.cip] ||= []).push(r);
+const cipStats = {};
+for (const [cip, rs] of Object.entries(byCip)) {
+  const nat = PSEO_NAT.earn[cip];
+  const sc1 = median(rs.map((r) => r.sc1)), sc4 = median(rs.map((r) => r.sc4));
+  cipStats[cip] = { e1: nat?.[1] ?? sc1, e4: nat ? nat[4] : sc4, lateYrs: nat ? 5 : 4, src: nat ? "census" : "scorecard",
+                    sc1, sc4, debt: median(rs.map((r) => r.debt)), schools: rs.length,
+                    e1sorted: rs.map((r) => r.sc1).filter((x) => x != null).sort((a, b) => a - b) };
+}
+const areaStats = {};
+for (const a of [...AREAS, OTHER]) {
+  const rs = ROWS.filter((r) => r.area === a.key);
+  const majors = [...new Set(rs.map((r) => r.cip))].map((cip) => ({ cip, title: F.titles[cip], ...cipStats[cip] }))
+    .sort((x, y) => y.schools - x.schools);
+  areaStats[a.key] = { e1: median(rs.map((r) => r.e1)), e4: median(rs.map((r) => r.e4)), majors, rows: rs.length };
+}
+const STATES = [...new Set(ROWS.map((r) => r.state).filter(Boolean))].sort();
+
+/* ---------- careers: grouped by federal job family ---------- */
+const FAMILIES = { "11": "Management", "13": "Business & finance", "15": "Computers & math", "17": "Architecture & engineering",
+  "19": "Science", "21": "Counseling & social services", "23": "Law", "25": "Education & libraries", "27": "Arts, design, media & sports",
+  "29": "Healthcare (practitioners)", "31": "Healthcare support", "33": "Protective services", "35": "Food service", "37": "Building & grounds",
+  "39": "Personal care", "41": "Sales", "43": "Office & administrative", "45": "Farming & forestry", "47": "Construction",
+  "49": "Installation & repair", "51": "Production", "53": "Transportation" };
+const familyOf = (soc) => FAMILIES[soc.slice(0, 2)] || "Other";
+const CAREER_LIST = Object.values(CAREERS).sort((a, b) => a.title.localeCompare(b.title));
+const EDU_LEVELS = ["No formal educational credential", "High school diploma or equivalent", "Postsecondary nondegree award", "Some college, no degree", "Associate's degree", "Bachelor's degree", "Master's degree", "Doctoral or professional degree"];
+const ALL_JOBS_GROWTH = 3.5;  // BLS: all occupations, 2025-35
+const careerMajors = (k) => k.majors.filter((m) => F.titles[m]);
+const majorList = Object.values(MAJORS).filter((m) => F.titles[m.cip]).sort((a, b) => a.title.localeCompare(b.title));
+const cipSorted = {};
+function cipSort(cip, key) {
+  const k = cip + key;
+  return cipSorted[k] ||= (byCip[cip] || []).map((r) => r[key]).filter((x) => x != null).sort((a, b) => a - b);
+}
+function rankIn(sorted, v) { if (v == null || !sorted.length) return null; let lo = 0; for (const x of sorted) if (x < v) lo++; return lo / sorted.length; }
+
+/* ---------- state ---------- */
+const S = {
+  view: "home", detail: null, compare: [],
+  filters: { q: "", area: "", cips: [], state: "", control: "", minE1: 0, profilesOnly: false, sort: "match",
+             home: "", weights: { pay: 2, debt: 2, home: 1, size: 0, outcomes: 0 } },
+  majorsQ: { q: "", area: "", career: "" }, careersQ: { q: "", family: "", edu: "", sort: "pay", major: "" },
+  shown: 30,
+  fit: { step: 0, answers: {} },
+};
+try { const c = JSON.parse(localStorage.getItem("pathways-compare") || "[]"); if (Array.isArray(c)) S.compare = c.filter((k) => rowByKey.has(k)).slice(0, 3); } catch (e) {}
+const saveCompare = () => { try { localStorage.setItem("pathways-compare", JSON.stringify(S.compare)); } catch (e) {} };
+
+function go(view) { S.detail = null; history_.length = 0; if (location.hash !== "#" + view) location.hash = view; else render(); window.scrollTo(0, 0); }
+window.addEventListener("hashchange", () => { S.detail = null; history_.length = 0; render(); window.scrollTo(0, 0); });
+
+/* ---------- shared bits ---------- */
+function toggleCompare(key) {
+  const i = S.compare.indexOf(key);
+  if (i >= 0) S.compare.splice(i, 1); else if (S.compare.length < 3) S.compare.push(key); else { S.compare.shift(); S.compare.push(key); }
+  saveCompare(); renderTray();
+  document.querySelectorAll(`.add[data-key="${key}"]`).forEach((b) => { b.setAttribute("aria-pressed", S.compare.includes(key)); b.textContent = S.compare.includes(key) ? "Added" : "+ Compare"; });
+}
+function renderTray() {
+  const n = S.compare.length, tray = document.getElementById("tray"), cnt = document.getElementById("navCount");
+  cnt.hidden = n === 0; cnt.textContent = n;
+  tray.hidden = n === 0 || currentView() === "compare";
+  document.getElementById("trayText").textContent = `${n} of 3 picked to compare`;
+}
+document.getElementById("trayClear").addEventListener("click", () => { S.compare = []; saveCompare(); renderTray(); render(); });
+const addBtn = (key) => `<button class="add" data-key="${key}" aria-pressed="${S.compare.includes(key)}">${S.compare.includes(key) ? "Added" : "+ Compare"}</button>`;
+function percentile(cip, e1) {
+  const a = cipStats[cip]?.e1sorted; if (!a || e1 == null || a.length < 5) return null;
+  let below = 0; for (const x of a) if (x < e1) below++;
+  return Math.min(99, Math.round((below / a.length) * 100));
+}
+
+/* ---------- home ---------- */
+function viewHome() {
+  const featured = PROFILES[0];
+  const fr = featured && rowByKey.get(featured.university_id + "_" + featured.cip4);
+  const popular = ["11.07", "52.08", "51.38", "42.01", "14.19", "52.13", "26.01", "09.01"].filter((c) => F.titles[c]);
+  const popCareers = ["29-1141", "15-1252", "13-2051", "17-2141", "13-2011", "21-1018"].filter((c) => CAREERS[c]);
+  return `
+  <section class="hero">
+    <div class="eyebrow">For high school and college students</div>
+    <h1>Know what your education can lead to <em>before you choose it</em>.</h1>
+    <p>See what a career is really like, which majors get you there, and which college programs give you the best shot.</p>
+    <div class="starter">
+      <div class="tabs" role="tablist" aria-label="Start from">
+        <button role="tab" data-htab="fromCareer" aria-selected="true">I know the career I want</button>
+        <button role="tab" data-htab="fromMajor" aria-selected="false">I know the major I want</button>
+        <button role="tab" data-htab="homeSearch" aria-selected="false">I'm looking at a college</button>
+      </div>
+      <form id="fromCareer"><input id="fromCareerQ" list="careerNames" placeholder="Type a career, e.g. Registered Nurses" aria-label="Career you want"><button class="btn primary small" type="submit">Show majors</button></form>
+      <form id="fromMajor" hidden><input id="fromMajorQ" list="majorNames" placeholder="Type a major, e.g. Finance" aria-label="Major you want"><button class="btn primary small" type="submit">Show careers</button></form>
+      <form id="homeSearch" role="search" hidden><input id="homeQ" type="search" placeholder="Try “Purdue”, “finance at Purdue”, or “nursing in Florida”" aria-label="Search programs and colleges"><button class="btn primary small" type="submit">Search</button></form>
+      <datalist id="careerNames">${CAREER_LIST.filter((k) => careerMajors(k).length).map((k) => `<option value="${esc(k.title)}">`).join("")}</datalist>
+      <datalist id="majorNames">${majorList.map((m) => `<option value="${esc(m.title)}">`).join("")}</datalist>
+    </div>
+    <div class="trust"><span><b>${F.schools.length.toLocaleString()}</b> colleges</span><span><b>${majorList.length}</b> majors</span><span><b>${CAREER_LIST.length}</b> careers</span><span>Federal and school-published data</span></div>
+  </section>
+
+  <div class="section-title"><h2>Not sure yet? Go step by step</h2></div>
+  <div class="doors journey">
+    <a class="door feature" href="#fit"><span class="stepno">STEP 1</span><h3>Find your fit</h3><span class="muted">6 quick questions about what you enjoy. Get career areas and majors that match.</span><span class="go">Start, about 2 minutes →</span></a>
+    <a class="door" href="#careers"><span class="stepno">STEP 2</span><h3>Explore careers</h3><span class="muted">A day in the life, how the career grows, pay at each stage and job outlook for ${CAREER_LIST.length} careers.</span><span class="go">Browse careers →</span></a>
+    <a class="door" href="#majors"><span class="stepno">STEP 3</span><h3>Research majors</h3><span class="muted">What ${majorList.length} majors cover, what they pay nationally, and the careers they lead to.</span><span class="go">Browse majors →</span></a>
+    <a class="door" href="#programs"><span class="stepno">STEP 4</span><h3>Find your programs</h3><span class="muted">Rank ${ROWS.length.toLocaleString()} college programs by what matters to you: pay, debt, location.</span><span class="go">Find programs →</span></a>
+  </div>
+
+  ${featured ? `<div class="section-title"><h2>What one real path looks like</h2><button class="btn ghost small" data-profile="${featured.id}">See the full profile</button></div>
+  <div class="path-row" aria-label="Example path">
+    <div class="path-step"><span class="dot">1</span><div><b>${esc(featured.program)}</b><span class="muted small">${esc(featured.school)}</span></div></div>
+    <div class="path-step"><span class="dot">2</span><div><b>${featured.outcomes.internships_reported ? featured.outcomes.internships_reported + " internships" : "Internships"}</b><span class="muted small">at ${featured.employers.filter((e) => e.outcome_type === "internship").slice(0, 3).map((e) => esc(e.name)).join(", ") || "local employers"}</span></div></div>
+    <div class="path-step"><span class="dot">3</span><div><b>First job: <span class="num">${money(startSal(featured.outcomes).v)}</span> ${startSal(featured.outcomes).kind}</b><span class="muted small">${featured.job_titles.filter((e) => e.outcome_type === "job").slice(0, 3).map((e) => esc(e.name)).join(", ")}</span></div></div>
+    <div class="path-step"><span class="dot">4</span><div><b>Four years later: <span class="num">${money(fr?.e4)}</span> median</b><span class="muted small">federal earnings data for this field at ${esc(featured.school)}</span></div></div>
+  </div>` : ""}
+
+  <div class="section-title"><h2>Browse by career area</h2><a href="#fit">Not sure? Take the fit guide</a></div>
+  <div class="areas-grid">
+    ${AREAS.map((a) => `<button class="area-card" data-area="${a.key}"><b>${esc(a.name)}</b><span class="muted small">${esc(a.blurb)}</span><span class="small"><span class="num">${kmoney(areaStats[a.key].e1)}</span> typical first-year pay</span></button>`).join("")}
+  </div>
+
+  <div class="section-title"><h2>Popular majors</h2><a href="#majors">All majors</a></div>
+  <div class="tags">${popular.map((c) => `<button class="chip" data-major="${c}">${esc(F.titles[c])}</button>`).join("")}</div>
+
+  <div class="section-title"><h2>Popular careers</h2><a href="#careers">All careers</a></div>
+  <div class="tags">${popCareers.map((c) => `<button class="chip" data-career="${c}">${esc(CAREERS[c].title)}</button>`).join("")}</div>
+
+  <div class="section-title"><h2>Where the numbers come from</h2></div>
+  <div class="how">
+    <div class="panel"><h3>Government pay and debt data</h3><p class="muted small">Pay 1, 5 and 10 years after graduating for graduates with steady work, from the U.S. Census Bureau. Where the Census doesn't cover a college, pay and debt come from the U.S. Department of Education.</p></div>
+    <div class="panel"><h3>Career data from the Labor Department</h3><p class="muted small">Daily tasks and work settings from O*NET, surveyed from real workers. Pay and job outlook from the Bureau of Labor Statistics.</p></div>
+    <div class="panel"><h3>Schools' own reports and catalogs</h3><p class="muted small">Where a school publishes it: placement, starting salaries and employers for that exact program, plus its required courses.</p></div>
+  </div>`;
+}
+
+/* ---------- fit guide ---------- */
+const QUESTIONS = [
+  { id: "afternoon", q: "Which of these sounds like a great afternoon?", hint: "Pick up to 2.", max: 2, options: [
+    { label: "Building or fixing something", sub: "Robots, cars, gadgets, models", w: { eng: 3, tech: 1, phys: 1 } },
+    { label: "Cracking a puzzle with numbers", sub: "Patterns, stats, strategy", w: { phys: 3, tech: 2, biz: 1 } },
+    { label: "Coding or messing with tech", sub: "Apps, games, computers", w: { tech: 3, eng: 1 } },
+    { label: "Helping someone through a hard time", sub: "Listening, caring, teaching", w: { health: 2, psych: 3, edu: 2 } },
+    { label: "Making something creative", sub: "Art, music, video, design", w: { arts: 3, comm: 2 } },
+    { label: "Running a project or a business idea", sub: "Planning, selling, leading", w: { biz: 3, comm: 1 } },
+    { label: "Reading, writing or debating", sub: "Big ideas and arguments", w: { hum: 3, social: 2, comm: 1 } },
+    { label: "Being outside with nature or animals", sub: "Hiking, gardening, wildlife", w: { env: 3, life: 2 } },
+    { label: "Playing or coaching a sport", sub: "Training, teamwork, health", w: { sport: 3, health: 1, edu: 1 } },
+  ]},
+  { id: "subjects", q: "Which classes do you enjoy most?", hint: "Pick up to 3.", max: 3, options: [
+    { label: "Math", w: { phys: 2, eng: 2, tech: 1, biz: 1 } },
+    { label: "Biology", w: { life: 3, health: 2, env: 1 } },
+    { label: "Chemistry or physics", w: { phys: 2, eng: 2, health: 1 } },
+    { label: "Computer science", w: { tech: 3, eng: 1 } },
+    { label: "English or writing", w: { hum: 2, comm: 2 } },
+    { label: "History or government", w: { social: 3, hum: 1 } },
+    { label: "Psychology or sociology", w: { psych: 3, social: 1 } },
+    { label: "Art, music or theater", w: { arts: 3 } },
+    { label: "Business or economics", w: { biz: 3, social: 1 } },
+    { label: "Health or PE", w: { health: 2, sport: 2 } },
+    { label: "A world language", w: { hum: 2, comm: 1, social: 1 } },
+  ]},
+  { id: "with", q: "In a job, what would you rather work with most?", hint: "Pick 1.", max: 1, options: [
+    { label: "People", sub: "Helping, teaching, persuading", w: { health: 2, psych: 2, edu: 2, social: 1, biz: 1 } },
+    { label: "Data and information", sub: "Analyzing, organizing, deciding", w: { tech: 2, biz: 2, phys: 2 } },
+    { label: "Things and machines", sub: "Building, testing, repairing", w: { eng: 3, tech: 1, env: 1 } },
+    { label: "Ideas and creativity", sub: "Designing, writing, inventing", w: { arts: 2, comm: 2, hum: 2 } },
+  ]},
+  { id: "setting", q: "Where can you picture yourself working?", hint: "Pick up to 2.", max: 2, options: [
+    { label: "An office or remote", w: { biz: 2, tech: 2, comm: 1 } },
+    { label: "A hospital or clinic", w: { health: 3, psych: 1 } },
+    { label: "A lab", w: { life: 2, phys: 2, health: 1 } },
+    { label: "A classroom", w: { edu: 3, hum: 1 } },
+    { label: "Outdoors or in the field", w: { env: 3, eng: 1, life: 1 } },
+    { label: "A studio or on stage", w: { arts: 3, comm: 1 } },
+    { label: "A factory, site or workshop", w: { eng: 3 } },
+    { label: "A courtroom, agency or nonprofit", w: { social: 3 } },
+    { label: "A gym, field or arena", w: { sport: 3 } },
+  ]},
+  { id: "pay", q: "How much does a high starting salary matter to you?", hint: "Pick 1. We'll weigh real pay data by your answer.", max: 1, options: [
+    { label: "A lot", sub: "Pay is a top priority", pay: 3 },
+    { label: "Somewhat", sub: "Important, but not everything", pay: 1.5 },
+    { label: "Not much", sub: "I care more about the work itself", pay: 0 },
+  ]},
+  { id: "school", q: "Would you go to school after college if a career needed it?", hint: "Like medical school, law school or a master's.", max: 1, options: [
+    { label: "Yes", sub: "If it gets me where I want to go", grad: 1 },
+    { label: "Maybe", sub: "Depends on the career", grad: 0 },
+    { label: "I'd rather start working", sub: "Four years is enough", grad: -1 },
+  ]},
+];
+const GRAD_HEAVY = { psych: 2, life: 1.5, hum: 0.5, social: 0.5 };
+
+function scoreFit() {
+  const a = S.fit.answers, score = Object.fromEntries(AREAS.map((x) => [x.key, 0])), why = Object.fromEntries(AREAS.map((x) => [x.key, []]));
+  let pay = 1.5, grad = 0;
+  for (const q of QUESTIONS) for (const i of a[q.id] || []) {
+    const o = q.options[i];
+    if (o.pay != null) pay = o.pay;
+    if (o.grad != null) grad = o.grad;
+    for (const [k, v] of Object.entries(o.w || {})) { score[k] += v; if (v >= 2) why[k].push(o.label); }
+  }
+  const pays = AREAS.map((x) => areaStats[x.key].e1 || 0), lo = Math.min(...pays), hi = Math.max(...pays);
+  for (const x of AREAS) {
+    const rel = ((areaStats[x.key].e1 || lo) - lo) / (hi - lo || 1);
+    score[x.key] += pay * rel * 2;
+    if (grad < 0 && GRAD_HEAVY[x.key]) score[x.key] -= GRAD_HEAVY[x.key] * 2;
+  }
+  const ranked = AREAS.map((x) => ({ area: x, score: score[x.key], why: [...new Set(why[x.key])] })).sort((p, q) => q.score - p.score);
+  const top = Math.max(ranked[0].score, 1);
+  return { ranked: ranked.map((r) => ({ ...r, pct: Math.max(5, Math.round((r.score / top) * 100)) })), pay, grad };
+}
+
+function viewFit() {
+  const st = S.fit, n = QUESTIONS.length;
+  if (st.step >= n) return viewFitResults();
+  const q = QUESTIONS[st.step], chosen = st.answers[q.id] || [];
+  return `<div class="fit-wrap">
+    <div><div class="eyebrow">Find your fit · question ${st.step + 1} of ${n}</div><div class="progress" style="margin-top:8px"><span style="width:${(st.step / n) * 100}%"></span></div></div>
+    <div class="q"><h2>${esc(q.q)}</h2><div class="hint muted">${esc(q.hint)}</div>
+      <div class="options">${q.options.map((o, i) => `<button class="opt" data-opt="${i}" aria-pressed="${chosen.includes(i)}"><b>${esc(o.label)}</b>${o.sub ? `<span class="muted small">${esc(o.sub)}</span>` : ""}</button>`).join("")}</div>
+    </div>
+    <div class="fit-nav">
+      <button class="btn ghost" id="fitBack" ${st.step === 0 ? "disabled" : ""}>Back</button>
+      <button class="btn primary" id="fitNext" ${chosen.length ? "" : "disabled"}>${st.step === n - 1 ? "See my matches" : "Next"}</button>
+    </div>
+  </div>`;
+}
+
+function areaCareers(a, n = 6) {
+  const seen = new Map();
+  for (const m of areaStats[a.key].majors.slice(0, 6)) for (const s of (MAJORS[m.cip]?.careers || []).slice(0, 4)) {
+    const k = CAREERS[s]; if (k && !seen.has(s) && (k.outlook?.education || "").match(/Bachelor|Master|Doctoral/)) seen.set(s, k);
+  }
+  return [...seen.values()].slice(0, n);
+}
+
+function viewFitResults() {
+  const { ranked, grad } = scoreFit(), top = ranked.slice(0, 3);
+  return `<div class="stack">
+    <div><div class="eyebrow">Your matches</div><h1 style="font-size:clamp(30px,5vw,44px);margin-top:6px">Three career areas worth a closer look</h1>
+      <p class="muted" style="max-width:62ch">Based on what you enjoy. These are starting points, not a verdict: open a major to see real pay and outcomes at specific schools.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost small" id="fitRestart">Retake the quiz</button></div></div>
+    ${top.map((r, i) => {
+      const a = r.area, st = areaStats[a.key];
+      return `<section class="panel match">
+        <div class="match-head"><div><div class="eyebrow">Match ${i + 1}</div><h3>${esc(a.name)}</h3><div class="muted">${esc(a.blurb)}</div></div>
+          <div class="small" style="text-align:right"><b>${r.pct}% match</b><div class="meter"><span style="width:${r.pct}%"></span></div></div></div>
+        ${r.why.length ? `<div class="small"><b>Why:</b> you picked ${r.why.slice(0, 3).map((w) => "“" + esc(w) + "”").join(", ")}.</div>` : ""}
+        ${grad < 0 && GRAD_HEAVY[a.key] ? `<div class="callout small">Many careers here need a graduate degree. The ones that don't are still listed.</div>` : ""}
+        <div class="split">
+          <div><h4 style="margin:0 0 8px">Careers people go into</h4><div class="tags">${areaCareers(a).map((k) => `<button class="chip" data-career="${k.soc}">${esc(k.title)}</button>`).join("")}</div>
+            <p class="small muted" style="margin-top:10px">Typical pay one year after a bachelor's in this area: <b class="num">${money(st.e1)}</b>, and <b class="num">${money(st.e4)}</b> after four years (median across schools).</p></div>
+          <div><h4 style="margin:0 0 8px">Majors to look at</h4>
+            <table class="mini-table">${st.majors.slice(0, 5).map((m) => `<tr><td><button data-major="${m.cip}">${esc(m.title)}</button><div class="muted small">${m.schools.toLocaleString()} colleges</div></td><td class="num">${kmoney(m.e1)} → ${kmoney(m.e4)}</td></tr>`).join("")}</table>
+            <div class="small muted" style="margin-top:6px">Pay: 1 year → 4 years after graduating, median.</div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary small" data-area="${a.key}">Research ${esc(a.name.toLowerCase())} majors</button><button class="btn ghost small" data-programs-area="${a.key}">Find programs</button></div>
+      </section>`;
+    }).join("")}
+    <section class="panel"><h3 class="h">Your other areas, ranked</h3>
+      <table class="mini-table">${ranked.slice(3).map((r) => `<tr><td><button data-area="${r.area.key}">${esc(r.area.name)}</button></td><td class="num">${r.pct}%</td></tr>`).join("")}</table></section>
+  </div>`;
+}
+
+/* ---------- majors ---------- */
+function viewMajors() {
+  const f = S.majorsQ;
+  return `<div class="stack">
+    <div><div class="eyebrow">Research majors</div><h1 style="font-size:clamp(28px,4.5vw,40px);margin-top:4px">What each major is and where it leads</h1>
+      <p class="muted" style="max-width:68ch;margin:6px 0 0">National figures across every college that offers the major. To compare specific colleges, use <a href="#programs">Programs</a>.</p></div>
+    <div class="list-head">
+      <label>Search majors<input type="search" id="mq" value="${esc(f.q)}" placeholder="e.g. nursing, data, marine"></label>
+      <label>Career area<select id="marea"><option value="">All areas</option>${[...AREAS, OTHER].map((a) => `<option value="${a.key}" ${f.area === a.key ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>
+      <label>Leads to the career<select id="mcareer"><option value="">Any career</option>${CAREER_LIST.filter((k) => careerMajors(k).length).map((k) => `<option value="${k.soc}" ${f.career === k.soc ? "selected" : ""}>${esc(k.title)}</option>`).join("")}</select></label>
+    </div>
+    <div id="mbanner"></div>
+    <div class="grid-cards" id="mlist"></div>
+  </div>`;
+}
+function drawMajors() {
+  const f = S.majorsQ, w = f.q.toLowerCase().trim();
+  const k = f.career && CAREERS[f.career], allowed = k && new Set(careerMajors(k));
+  document.getElementById("mbanner").innerHTML = k ? `<div class="focus-banner"><span>Majors that lead to <b>${esc(k.title)}</b> (${allowed.size})</span><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost small" data-career="${k.soc}">About this career</button><button class="btn primary small" data-programs-cips="${[...allowed].sort((a, b) => (cipStats[b]?.schools || 0) - (cipStats[a]?.schools || 0)).slice(0, 6).join(",")}">Find programs for the top majors</button></span></div>` : "";
+  const list = majorList.filter((m) => (!allowed || allowed.has(m.cip)) && (!f.area || areaOf(m.cip).key === f.area) &&
+    (!w || (m.title + " " + m.specializations.join(" ")).toLowerCase().includes(w)))
+    .sort((a, b) => (cipStats[b.cip]?.schools || 0) - (cipStats[a.cip]?.schools || 0));
+  document.getElementById("mlist").innerHTML = list.length ? list.map((m) => {
+    const st = cipStats[m.cip] || {};
+    return `<button class="tile" data-major="${m.cip}"><span class="eyebrow">${esc(areaOf(m.cip).name)}</span><b>${esc(m.title)}</b>
+      <span class="row"><span><b>${kmoney(st.e1)}</b>pay after 1 yr</span><span><b>${kmoney(st.e4)}</b>after ${st.lateYrs || 4} yrs</span><span><b>${(st.schools || 0).toLocaleString()}</b>colleges</span></span></button>`;
+  }).join("") : `<div class="panel empty"><b>No majors match.</b><span class="muted">Try a broader word.</span></div>`;
+}
+function wireMajors() {
+  let t;
+  document.getElementById("mq").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { S.majorsQ.q = e.target.value; drawMajors(); }, 120); });
+  document.getElementById("marea").addEventListener("change", (e) => { S.majorsQ.area = e.target.value; drawMajors(); });
+  document.getElementById("mcareer").addEventListener("change", (e) => { S.majorsQ.career = e.target.value; drawMajors(); });
+  drawMajors();
+}
+
+function majorTile(cip) {
+  const st = cipStats[cip] || {};
+  return `<button class="tile" data-major="${cip}"><span class="eyebrow">${esc(areaOf(cip).name)}</span><b>${esc(F.titles[cip])}</b>
+    <span class="row"><span><b>${kmoney(st.e1)}</b>pay after 1 yr</span><span><b>${kmoney(st.e4)}</b>after ${st.lateYrs || 4} yrs</span><span><b>${(st.schools || 0).toLocaleString()}</b>colleges</span></span></button>`;
+}
+function careerTile(k) {
+  const p = k.pay?.median ?? k.outlook?.median, g = k.outlook?.growth_pct;
+  return `<button class="tile" data-career="${k.soc}"><span class="eyebrow">${esc(familyOf(k.soc))}</span><b>${esc(k.title)}</b>
+    <span class="row"><span><b>${kmoney(p)}</b>median pay</span>${g != null ? `<span><b class="${g >= ALL_JOBS_GROWTH ? "up" : "down"}">${g > 0 ? "+" : ""}${g}%</b>job growth</span>` : ""}<span><b>${esc(shortEdu(k.outlook?.education))}</b>to start</span></span></button>`;
+}
+const shortEdu = (e) => !e ? "—" : e.replace("Doctoral or professional degree", "Doctorate").replace(" diploma or equivalent", "").replace("Postsecondary nondegree award", "Certificate").replace("No formal educational credential", "None").replace("Some college, no degree", "Some college").replace(" degree", "");
+
+function viewMajor(m) {
+  const st = cipStats[m.cip] || {}, a = areaOf(m.cip), rs = (byCip[m.cip] || []).filter((r) => r.e1 != null);
+  const e1s = cipSort(m.cip, "e1"), q = (p) => e1s.length ? e1s[Math.floor(p * (e1s.length - 1))] : null;
+  const top = rs.slice().sort((x, y) => y.e1 - x.e1).slice(0, 8);
+  const careers = m.careers.map((s) => CAREERS[s]).filter(Boolean).sort((a, b) => !!b.pay - !!a.pay);
+  const profs = PROFILES.filter((p) => p.cip4 === m.cip);
+  return `<div class="stack">
+    <div class="detail-head"><button class="back" data-back>← Back</button>
+      <div class="eyebrow" style="margin-top:10px">${esc(a.name)} · Major</div>
+      <h1>${esc(m.title)}</h1>
+      ${m.definition ? `<p class="sub" style="max-width:72ch">${esc(m.definition)}</p>` : ""}
+      <div class="chips"><button class="btn primary small" data-programs-cip="${m.cip}">Find programs for this major</button></div>
+    </div>
+    <section class="panel"><h3 class="h">Pay after graduating</h3>
+      <div class="figures">
+        <div class="fig"><div class="n">${money(st.e1)}</div><div class="l">Median pay 1 year after</div></div>
+        <div class="fig"><div class="n">${money(st.e4)}</div><div class="l">Median pay ${st.lateYrs} years after</div></div>
+        ${PSEO_NAT.ind[m.cip.slice(0, 2)]?.nme_pct != null ? `<div class="fig"><div class="n">${PSEO_NAT.ind[m.cip.slice(0, 2)].nme_pct}%</div><div class="l">Not working steadily a year out (broad field)</div></div>` : ""}
+        <div class="fig"><div class="n">${money(st.debt)}</div><div class="l">Median federal loan debt</div></div>
+
+      </div>
+      <p class="muted small">${st.src === "census" ? `Graduates with steady work (earning at least what a full-time minimum-wage job pays), across the ${PSEO_NAT.earn[m.cip][10]} states that share records with the U.S. Census Bureau. “Not working steadily” counts graduates with no job or only marginal work in the records, which can include people in grad school, the military or self-employed.` : `From the College Scorecard, which includes part-time work.`}</p>
+      ${e1s.length >= 10 ? `<p class="muted small">The college you choose matters: across ${(st.schools || 0).toLocaleString()} colleges, first-year pay for this major (College Scorecard, including part-time work) is about ${money(q(0.1))} at the lowest-paying 10% and ${money(q(0.9))} at the top 10%.</p>` : ""}
+    </section>
+    ${majorCensus(m)}
+    ${m.specializations.length ? `<section class="panel"><h3 class="h">What you might focus on</h3><div class="tags">${m.specializations.map((x) => `<span class="chip">${esc(x)}</span>`).join("")}</div></section>` : ""}
+    <section class="panel"><h3 class="h">Careers this major leads to</h3>
+      ${careers.length ? `<div class="grid-cards">${careers.slice(0, 12).map(careerTile).join("")}</div>
+        ${careers.length > 12 ? `<div style="margin-top:12px"><button class="btn ghost small" data-careers-for="${m.cip}">See all ${careers.length} careers</button></div>` : ""}` : `<p class="muted small">No careers linked yet.</p>`}
+      <p class="muted small" style="margin-top:12px">From the federal list that links majors to the jobs they prepare you for. Some careers need more school or experience after college.</p>
+    </section>
+    ${profs.length ? `<section class="panel"><h3 class="h">Programs with detailed graduate outcomes</h3><div class="grid-cards">${profs.map((p) => `<button class="tile" data-profile="${p.id}"><b>${esc(p.program)}</b><span class="muted small">${esc(p.school)}</span><span class="row">${startSal(p.outcomes).v != null ? `<span><b>${money(startSal(p.outcomes).v)}</b>${startSal(p.outcomes).kind} starting salary</span>` : p.outcomes.pct_employed != null ? `<span><b>${p.outcomes.pct_employed}%</b>working after graduating</span>` : ""}</span></button>`).join("")}</div></section>` : ""}
+    <section class="panel"><h3 class="h">Highest-paying colleges for this major</h3>
+      <table class="mini-table">${top.map((r) => `<tr><td><button data-row="${r.key}">${esc(r.school)}</button><div class="muted small">${esc(r.city)}, ${esc(r.state)}</div></td><td class="num">${kmoney(r.e1)}${r.e4 != null ? ` → ${kmoney(r.e4)}` : ""}</td></tr>`).join("")}</table>
+      <div style="margin-top:12px"><button class="btn ghost small" data-programs-cip="${m.cip}">See all ${rs.length.toLocaleString()} colleges</button></div>
+    </section>
+    <section class="panel"><h3 class="h">Sources</h3><ol class="sources">
+      <li><a href="${SCORECARD.url}" target="_blank" rel="noopener">${SCORECARD.name}</a>, U.S. Department of Education</li>
+      <li><a href="https://nces.ed.gov/ipeds/cipcode/" target="_blank" rel="noopener">Classification of Instructional Programs 2020 and CIP-to-SOC crosswalk</a>, National Center for Education Statistics</li>
+      ${PSEO_NAT.earn[m.cip] || PSEO_NAT.ind[m.cip.slice(0, 2)] ? `<li><a href="${CENSUS.url}" target="_blank" rel="noopener">${CENSUS.name}</a>, U.S. Census Bureau</li>` : ""}</ol></section>
+  </div>`;
+}
+
+/* ---------- careers ---------- */
+function viewCareers() {
+  const f = S.careersQ;
+  return `<div class="stack">
+    <div><div class="eyebrow">Explore careers</div><h1 style="font-size:clamp(28px,4.5vw,40px);margin-top:4px">What the work is really like</h1>
+      <p class="muted" style="max-width:68ch;margin:6px 0 0">A day in the life, how each career grows, pay at every stage and how many jobs there will be. National data from the U.S. Department of Labor.</p></div>
+    <div class="list-head">
+      <label>Search careers<input type="search" id="cq" value="${esc(f.q)}" placeholder="e.g. nurse, analyst, teacher"></label>
+      <label>From the major<select id="cmajor"><option value="">Any major</option>${majorList.filter((m) => m.careers.length).map((m) => `<option value="${m.cip}" ${f.major === m.cip ? "selected" : ""}>${esc(m.title)}</option>`).join("")}</select></label>
+      <label>Job family<select id="cfam"><option value="">All</option>${[...new Set(Object.values(FAMILIES))].sort().map((x) => `<option ${f.family === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
+      <label>Education to start<select id="cedu"><option value="">Any</option>${EDU_LEVELS.map((x) => `<option ${f.edu === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
+      <label>Sort<select id="csort">${[["pay", "Highest pay"], ["growth", "Fastest growing"], ["openings", "Most openings"], ["name", "A to Z"]].map(([v, l]) => `<option value="${v}" ${f.sort === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+    </div>
+    <div id="cbanner"></div>
+    <div class="muted small" id="ccount"></div>
+    <div class="grid-cards" id="clist"></div>
+    <div style="text-align:center"><button class="btn ghost" id="cmore" hidden>Show more</button></div>
+  </div>`;
+}
+function drawCareers() {
+  const f = S.careersQ, w = f.q.toLowerCase().trim();
+  const m = f.major && MAJORS[f.major], allowed = m && new Set(m.careers);
+  document.getElementById("cbanner").innerHTML = m ? `<div class="focus-banner"><span>Careers that <b>${esc(m.title)}</b> can lead to (${m.careers.filter((s) => CAREERS[s]).length})</span><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost small" data-major="${m.cip}">About this major</button><button class="btn primary small" data-programs-cip="${m.cip}">Find programs</button></span></div>` : "";
+  let list = CAREER_LIST.filter((k) => (!allowed || allowed.has(k.soc)) && (!f.family || familyOf(k.soc) === f.family) && (!f.edu || k.outlook?.education === f.edu) &&
+    (!w || (k.title + " " + k.titles.join(" ")).toLowerCase().includes(w)));
+  const v = (x) => x ?? -1e9;
+  if (f.sort === "pay") list = list.slice().sort((a, b) => v(b.pay?.median) - v(a.pay?.median));
+  if (f.sort === "growth") list = list.slice().sort((a, b) => v(b.outlook?.growth_pct) - v(a.outlook?.growth_pct));
+  if (f.sort === "openings") list = list.slice().sort((a, b) => v(b.outlook?.openings) - v(a.outlook?.openings));
+  if (w) list = list.slice().sort((a, b) => b.title.toLowerCase().includes(w) - a.title.toLowerCase().includes(w));
+  document.getElementById("ccount").textContent = `${list.length} careers`;
+  document.getElementById("clist").innerHTML = list.slice(0, S.cshown).map(careerTile).join("") || `<div class="panel empty"><b>No careers match.</b></div>`;
+  document.getElementById("cmore").hidden = list.length <= S.cshown;
+}
+function wireCareers() {
+  const f = S.careersQ; let t;
+  document.getElementById("cq").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { f.q = e.target.value; S.cshown = 48; drawCareers(); }, 120); });
+  document.getElementById("cfam").addEventListener("change", (e) => { f.family = e.target.value; S.cshown = 48; drawCareers(); });
+  document.getElementById("cmajor").addEventListener("change", (e) => { f.major = e.target.value; S.cshown = 48; drawCareers(); });
+  document.getElementById("cedu").addEventListener("change", (e) => { f.edu = e.target.value; S.cshown = 48; drawCareers(); });
+  document.getElementById("csort").addEventListener("change", (e) => { f.sort = e.target.value; drawCareers(); });
+  document.getElementById("cmore").addEventListener("click", () => { S.cshown += 48; drawCareers(); });
+  drawCareers();
+}
+
+function level(v) { return v >= 4.25 ? "Almost always" : v >= 3.5 ? "Often" : v >= 2.5 ? "Sometimes" : v >= 1.75 ? "Rarely" : "Almost never"; }
+const CONTEXT_ORDER = ["Contact with people", "Teamwork", "Face-to-face conversations", "Dealing with customers or the public", "Leading others", "Email", "Public speaking", "Deadlines and time pressure", "Freedom to make your own decisions", "Need to be exact and accurate", "Sitting", "Standing", "Working indoors", "Working outdoors", "Exposure to illness"];
+
+function viewCareer(k) {
+  const p = k.pay, o = k.outlook || {}, step = (s, cls = "") => { const c = CAREERS[s]; return c ? `<button class="step ${cls}" data-career="${s}"><b>${esc(c.title)}</b><small>${kmoney(c.pay?.median)} median · ${esc(shortEdu(c.outlook?.education))}</small></button>` : ""; };
+  const ctx = CONTEXT_ORDER.filter((n) => k.context[n] != null);
+  const majors = careerMajors(k);
+  const max = p?.pct90 || 1;
+  return `<div class="stack">
+    <div class="detail-head"><button class="back" data-back>← Back</button>
+      <div class="eyebrow" style="margin-top:10px">${esc(familyOf(k.soc))} · Career</div>
+      <h1>${esc(k.title)}</h1>
+      <p class="sub" style="max-width:72ch">${esc(k.description)}</p>
+      <div class="chips">
+        ${o.education ? `<span class="chip">To start: ${esc(o.education)}</span>` : ""}
+        ${o.experience && o.experience !== "None" ? `<span class="chip warn">Needs ${esc(o.experience.toLowerCase())} of related work first</span>` : ""}
+        ${k.interests.length ? `<span class="chip spark">Fits people who are ${k.interests.map((i) => esc(INTEREST_WORDS[i] || i)).join(" and ")}</span>` : ""}
+      </div>
+      ${k.titles.length ? `<p class="small muted" style="margin-top:10px">Also called: ${k.titles.map(esc).join(", ")}</p>` : ""}
+    </div>
+
+    <section class="panel"><h3 class="h">A day in the life</h3>
+      <ul class="tasks">${k.tasks.map((t) => `<li><span>${esc(t.task)}</span>${t.daily_pct != null ? `<span class="freq ${t.daily_pct >= 50 ? "hi" : ""}" title="Share of workers who do this daily or more">${t.daily_pct}% daily</span>` : ""}</li>`).join("")}</ul>
+      <p class="muted small" style="margin-top:12px">${k.tasks.some((t) => t.daily_pct != null) ? "Most important tasks first. The percentage is how many workers in this job do it every day." : "Main tasks for this job. How often each is done hasn't been surveyed yet."}</p>
+    </section>
+
+    ${ctx.length ? `<section class="panel"><h3 class="h">The work setting</h3>
+      <div class="figures" style="margin-bottom:18px">
+        ${k.over_40_hours_pct != null ? `<div class="fig"><div class="n">${k.over_40_hours_pct}%</div><div class="l">work more than 40 hours a week</div></div>` : ""}
+        ${k.regular_schedule_pct != null ? `<div class="fig"><div class="n">${k.regular_schedule_pct}%</div><div class="l">have a regular, set schedule</div></div>` : ""}
+      </div>
+      <div class="meters">${ctx.map((n) => { const v = k.context[n]; return `<div class="meter-row"><div class="lab"><span>${esc(n)}</span><span>${level(v)}</span></div><div class="dots">${[1, 2, 3, 4, 5].map((i) => `<i class="${v >= i - 0.25 ? "on" : ""}"></i>`).join("")}</div></div>`; }).join("")}</div>
+      <p class="muted small" style="margin-top:12px">From surveys of people working in this job.</p>
+    </section>` : ""}
+
+    <section class="panel"><h3 class="h">How the career grows</h3>
+      <div class="ladder">
+        <div class="stepcol"><h4>Can lead here</h4>${k.earlier_steps.map((s) => step(s)).join("") || `<span class="muted small">Usually a starting job${o.education ? ` after a ${esc(shortEdu(o.education).toLowerCase())}` : ""}.</span>`}</div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="stepcol"><h4>This career</h4><div class="step me"><b>${esc(k.title)}</b><small>${kmoney(p?.median)} median</small></div></div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="stepcol"><h4>Where it can lead</h4>${k.next_steps.map((s) => step(s)).join("") || `<span class="muted small">Often a senior or specialist role in itself. Pay keeps growing with experience.</span>`}</div>
+      </div>
+      ${p ? `<h4 style="margin:22px 0 4px">Pay as you gain experience</h4>
+        <div class="paybar" aria-hidden="true"><div class="track" style="left:${(p.pct10 / max) * 100}%"></div>${["pct10", "pct25", "median", "pct75", "pct90"].filter((x) => p[x]).map((x) => `<span class="tick" style="left:${(p[x] / max) * 100}%"></span>`).join("")}</div>
+        <div class="paylabels">
+          <div><b>${kmoney(p.pct10)}</b><span>Starting out (lowest 10%)</span></div>
+          <div><b>${kmoney(p.pct25)}</b><span>Early career</span></div>
+          <div><b>${kmoney(p.median)}</b><span>Mid-career (median)</span></div>
+          <div><b>${kmoney(p.pct75)}</b><span>Experienced</span></div>
+          <div><b>${p.pct90 ? kmoney(p.pct90) : "$239k+"}</b><span>Top earners (top 10%)</span></div>
+        </div>
+        <p class="muted small" style="margin-top:10px">Yearly pay for everyone in this job nationwide. Newer workers tend to be at the lower end and experienced workers at the higher end, but location and employer matter too.</p>` : ""}
+    </section>
+
+    ${o.growth_pct != null ? `<section class="panel"><h3 class="h">Job outlook, 2025–2035</h3>
+      <div class="figures">
+        <div class="fig"><div class="n ${o.growth_pct >= ALL_JOBS_GROWTH ? "up" : "down"}">${o.growth_pct > 0 ? "+" : ""}${o.growth_pct}%</div><div class="l">expected job growth (all jobs: +${ALL_JOBS_GROWTH}%)</div></div>
+        ${o.openings ? `<div class="fig"><div class="n">${o.openings.toLocaleString()}</div><div class="l">openings a year, on average</div></div>` : ""}
+        ${o.jobs ? `<div class="fig"><div class="n">${o.jobs.toLocaleString()}</div><div class="l">people work in this job today</div></div>` : ""}
+      </div>
+      ${o.training && o.training !== "None" ? `<p class="muted small">Training after you're hired: ${esc(o.training.toLowerCase())}.</p>` : ""}
+    </section>` : ""}
+
+    <section class="panel"><h3 class="h">Majors that lead here</h3>
+      ${majors.length ? `<div class="grid-cards">${majors.slice().sort((a, b) => (cipStats[b]?.schools || 0) - (cipStats[a]?.schools || 0)).slice(0, 9).map(majorTile).join("")}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+          ${majors.length > 9 ? `<button class="btn ghost small" data-majors-for="${k.soc}">See all ${majors.length} majors</button>` : ""}
+          <button class="btn primary small" data-programs-cips="${majors.slice().sort((a, b) => (cipStats[b]?.schools || 0) - (cipStats[a]?.schools || 0)).slice(0, 6).join(",")}">Find college programs for the top majors</button></div>` : `<p class="muted small">No specific majors listed. Many people enter this career from a range of fields.</p>`}
+    </section>
+
+    ${k.related.filter((s) => CAREERS[s]).length ? `<section class="panel"><h3 class="h">Similar careers</h3><div class="tags">${k.related.filter((s) => CAREERS[s]).slice(0, 8).map((s) => `<button class="chip" data-career="${s}">${esc(CAREERS[s].title)}</button>`).join("")}</div></section>` : ""}
+
+    <section class="panel"><h3 class="h">Sources</h3><ol class="sources">
+      <li><a href="${ONET.url}" target="_blank" rel="noopener">${ONET.name}</a>: tasks, work setting, job titles, related careers</li>
+      ${p ? `<li><a href="${OEWS.url}" target="_blank" rel="noopener">${OEWS.name}</a>: pay</li>` : ""}
+      ${o.growth_pct != null ? `<li><a href="${PROJ.url}" target="_blank" rel="noopener">${PROJ.name}</a>: outlook and entry requirements</li>` : ""}
+      ${o.ooh ? `<li><a href="${esc(o.ooh)}" target="_blank" rel="noopener">Occupational Outlook Handbook: ${esc(k.title)}</a></li>` : ""}</ol></section>
+  </div>`;
+}
+const INTEREST_WORDS = { Realistic: "hands-on", Investigative: "curious problem-solvers", Artistic: "creative", Social: "people-focused", Enterprising: "persuasive leaders", Conventional: "organized and detail-minded" };
+
+/* ---------- programs (school + major) ---------- */
+function matchInfo(r) {
+  const f = S.filters, w = f.weights, reasons = [];
+  const pay = rankIn(cipSort(r.cip, "sc1"), r.sc1), debt = r.debt == null ? null : 1 - rankIn(cipSort(r.cip, "debt"), r.debt);
+  const size = rankIn(cipSort(r.cip, "n"), r.n), prof = profileKeys.has(r.key) ? 1 : 0, home = f.home ? (r.state === f.home ? 1 : 0) : null;
+  let tot = 0, wt = 0;
+  const add = (v, weight) => { if (v != null && weight) { tot += v * weight; wt += weight; } };
+  add(pay, w.pay); add(debt, w.debt); add(size, w.size); add(prof, w.outcomes); add(home, f.home ? w.home : 0);
+  if (pay != null && pay >= 0.75) reasons.push(pay >= 0.9 ? "Top 10% pay for this major" : "Top 25% pay for this major");
+  if (debt != null && debt >= 0.75) reasons.push("Low debt for this major");
+  if (home) reasons.push("In your state");
+  if (prof) reasons.push("Detailed graduate outcomes");
+  if (size != null && size >= 0.8 && w.size) reasons.push("Large program");
+  return { score: wt ? Math.round((tot / wt) * 100) : null, reasons };
+}
+
+function filtered() {
+  const f = S.filters, words = f.q.toLowerCase().split(/\s+/).filter((w) => w && w !== "at" && w !== "in");
+  let rs = ROWS.filter((r) =>
+    (!f.area || r.area === f.area) && (!f.cips.length || f.cips.includes(r.cip)) && (!f.state || r.state === f.state) &&
+    (!f.control || r.control === f.control) && (!f.minE1 || (r.e1 || 0) >= f.minE1) &&
+    (!f.profilesOnly || profileKeys.has(r.key)) &&
+    (!words.length || words.every((w) => (r.title + " " + r.school + " " + r.city + " " + r.state + " " + r.names.map((x) => x[0]).join(" ")).toLowerCase().includes(w))));
+  const s = f.sort, num = (x) => x ?? -1;
+  if (s === "match") { for (const r of rs) r._m = matchInfo(r); rs.sort((a, b) => num(b._m.score) - num(a._m.score)); return rs; }
+  if (s === "e1") rs.sort((a, b) => num(b.e1) - num(a.e1));
+  if (s === "e4") rs.sort((a, b) => num(b.e4) - num(a.e4));
+  if (s === "e10") rs.sort((a, b) => num(pseoEarn(b)?.[7]) - num(pseoEarn(a)?.[7]));
+  if (s === "debt") rs.sort((a, b) => (a.debt ?? 1e9) - (b.debt ?? 1e9));
+  if (s === "ratio") rs.sort((a, b) => ((a.debt ?? 1e9) / (a.e1 || 1)) - ((b.debt ?? 1e9) / (b.e1 || 1)));
+  if (s === "size") rs.sort((a, b) => (b.n || 0) - (a.n || 0));
+  if (s === "name") rs.sort((a, b) => a.school.localeCompare(b.school));
+  return rs;
+}
+
+function viewExplore() {
+  const f = S.filters, w = f.weights;
+  const cips = (f.area ? areaStats[f.area].majors : Object.keys(F.titles).map((cip) => ({ cip, title: F.titles[cip] }))).slice().sort((a, b) => a.title.localeCompare(b.title));
+  const seg = (key, labels) => `<div class="seg" role="group">${labels.map((l, i) => `<button data-w="${key}" data-v="${i}" aria-pressed="${w[key] === i}">${l}</button>`).join("")}</div>`;
+  return `<div class="stack">
+    <div><div class="eyebrow">Find your programs</div><h1 style="font-size:clamp(28px,4.5vw,40px);margin-top:4px">Programs ranked for you</h1>
+    <p class="muted" style="max-width:68ch;margin:6px 0 0">Pick the majors you're considering and tell us what matters. Every college that offers them is scored against others offering the same major.</p></div>
+    <section class="panel stack">
+      <div class="lbl" style="display:grid;gap:8px"><span class="eyebrow">Majors you're considering</span>
+        <div class="picked">${f.cips.map((c) => `<span class="chip">${esc(F.titles[c])}<button data-unpick="${c}" aria-label="Remove ${esc(F.titles[c])}">×</button></span>`).join("") || `<span class="muted small">All majors. Add one or more to focus the list.</span>`}</div>
+        <select id="fadd" style="max-width:420px;font:15px var(--body);padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)"><option value="">+ Add a major</option>${cips.filter((m) => !f.cips.includes(m.cip)).map((m) => `<option value="${m.cip}">${esc(m.title)}</option>`).join("")}</select>
+      </div>
+      <div class="prefs">
+        <label class="lbl">Your home state<select id="fhome" style="font:15px var(--body);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)"><option value="">Not set</option>${STATES.map((s) => `<option ${f.home === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+        <div class="lbl">High pay matters${seg("pay", ["No", "Some", "A lot", "Most"])}</div>
+        <div class="lbl">Low debt matters${seg("debt", ["No", "Some", "A lot", "Most"])}</div>
+        <div class="lbl">Staying near home${seg("home", ["No", "Some", "A lot", "Most"])}</div>
+        <div class="lbl">Detailed outcomes${seg("outcomes", ["No", "Some", "A lot", "Most"])}</div>
+        <div class="lbl">Big program${seg("size", ["No", "Some", "A lot", "Most"])}</div>
+      </div>
+    </section>
+    <div class="explore">
+      <aside class="filters panel" id="filters" aria-label="Filters">
+        <label>Search<input type="search" id="fq" value="${esc(f.q)}" placeholder="College, city or major"></label>
+        <label>Career area<select id="farea"><option value="">All areas</option>${[...AREAS, OTHER].map((a) => `<option value="${a.key}" ${f.area === a.key ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>
+        <label>Only this state<select id="fstate"><option value="">All states</option>${STATES.map((s) => `<option ${f.state === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+        <label>Type of college<select id="fcontrol"><option value="">Any</option>${["Public", "Private nonprofit", "Private for-profit"].map((c) => `<option ${f.control === c ? "selected" : ""}>${c}</option>`).join("")}</select></label>
+        <div class="lbl"><span>Pay 1 year after: at least <b class="num" id="fminOut">${f.minE1 ? money(f.minE1) : "any"}</b></span><input type="range" id="fmin" min="0" max="120000" step="5000" value="${f.minE1}" aria-label="Minimum first-year pay"></div>
+        <label class="check"><input type="checkbox" id="fprof" ${f.profilesOnly ? "checked" : ""}> Only detailed outcomes</label>
+        <button class="btn ghost small" id="freset">Clear filters</button>
+      </aside>
+      <div style="min-width:0">
+        <div class="results-head">
+          <span id="rcount" class="muted"></span>
+          <span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn ghost small filter-toggle" id="ftoggle">Filters</button>
+            <label class="sortbar small muted">Sort<select id="fsort">
+              ${[["match", "Best match for you"], ["e1", "Highest pay after 1 year"], ["e4", "Highest pay a few years later"], ["e10", "Highest pay after 10 years (where known)"], ["debt", "Lowest debt"], ["ratio", "Best pay for the debt"], ["size", "Most graduates"], ["name", "College name"]].map(([v, l]) => `<option value="${v}" ${f.sort === v ? "selected" : ""}>${l}</option>`).join("")}
+            </select></label>
+          </span>
+        </div>
+        <div class="cards" id="cards"></div>
+        <div style="text-align:center;margin-top:16px"><button class="btn ghost" id="more" hidden>Show more</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function card(r) {
+  const prof = profileKeys.has(r.key);
+  return `<article class="card">
+    <div class="main" style="min-width:0;display:grid;gap:6px">
+      <button class="t" data-row="${r.key}">${esc(nameOf(r, S.filters.q))}</button>
+      <div class="s">${esc(r.school)} · ${esc(r.city)}, ${esc(r.state)} · ${esc(r.control)}</div>
+      ${r.names.length && r.names[0][0].toLowerCase() !== r.title.toLowerCase() ? `<div class="fedname">Federal field: ${esc(r.title)}</div>` : ""}
+      <div class="fedname">Pay: ${r.src === "census" ? "graduates with steady work (U.S. Census)" : "includes part-time work (College Scorecard)"}</div>
+      <div class="figs"><span><b>${money(r.e1)}</b>pay after 1 yr</span>${r.e4 != null ? `<span><b>${money(r.e4)}</b>after ${r.lateYrs} yrs</span>` : ""}${pseoEarn(r)?.[7] ? `<span><b>${money(pseoEarn(r)[7])}</b>after 10 yrs</span>` : ""}<span><b>${money(r.debt)}</b>median debt</span>${r.n ? `<span><b>${r.n.toLocaleString()}</b>grads, 2 yrs</span>` : ""}</div>
+    </div>
+    ${r._m && S.filters.sort === "match" && r._m.reasons.length ? `<div class="reasons" style="grid-column:1/-1">${r._m.reasons.map((x) => `<span>${esc(x)}</span>`).join("")}</div>` : ""}
+    <div class="side">${r._m && S.filters.sort === "match" && r._m.score != null ? `<span class="score" title="How well this fits what you said matters">${r._m.score} match</span>` : ""}${prof ? `<span class="chip good">Detailed outcomes</span>` : ""}${addBtn(r.key)}</div>
+  </article>`;
+}
+
+function drawResults() {
+  const rs = filtered();
+  document.getElementById("rcount").textContent = `${rs.length.toLocaleString()} result${rs.length === 1 ? "" : "s"}`;
+  document.getElementById("cards").innerHTML = rs.length ? rs.slice(0, S.shown).map(card).join("")
+    : `<div class="panel empty"><b>No matches.</b><span class="muted">Try removing a filter or searching a broader word, like “business” or “engineering”.</span></div>`;
+  document.getElementById("more").hidden = rs.length <= S.shown;
+}
+
+function wireExplore() {
+  const f = S.filters, set = (k, v) => { f[k] = v; S.shown = 30; drawResults(); };
+  const q = document.getElementById("fq"); let t;
+  q.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => set("q", q.value), 150); });
+  document.getElementById("farea").addEventListener("change", (e) => { f.area = e.target.value; S.shown = 30; render(); });
+  document.getElementById("fadd").addEventListener("change", (e) => { if (e.target.value) { f.cips.push(e.target.value); S.shown = 30; render(); } });
+  document.getElementById("fhome").addEventListener("change", (e) => { f.home = e.target.value; S.shown = 30; render(); });
+  document.getElementById("fstate").addEventListener("change", (e) => set("state", e.target.value));
+  document.getElementById("fcontrol").addEventListener("change", (e) => set("control", e.target.value));
+  document.getElementById("fmin").addEventListener("input", (e) => { const v = +e.target.value; document.getElementById("fminOut").textContent = v ? money(v) : "any"; set("minE1", v); });
+  document.getElementById("fprof").addEventListener("change", (e) => set("profilesOnly", e.target.checked));
+  document.getElementById("fsort").addEventListener("change", (e) => set("sort", e.target.value));
+  document.getElementById("freset").addEventListener("click", () => { Object.assign(f, { q: "", area: "", cips: [], state: "", control: "", minE1: 0, profilesOnly: false }); render(); });
+  document.getElementById("more").addEventListener("click", () => { S.shown += 30; drawResults(); });
+  document.getElementById("ftoggle").addEventListener("click", () => document.getElementById("filters").classList.toggle("open"));
+  drawResults();
+}
+
+/* ---------- detail: a college + field ---------- */
+function viewRow(r) {
+  const cs = cipStats[r.cip], pct = percentile(r.cip, r.sc1), profs = profileFor(r.uid, r.cip), a = areaByKey[r.area];
+  const others = ROWS.filter((x) => x.uid === r.uid && x.key !== r.key && x.e1 != null).sort((x, y) => y.e1 - x.e1).slice(0, 6);
+  const nearby = (byCip[r.cip] || []).filter((x) => x.state === r.state && x.key !== r.key && x.e1 != null).sort((x, y) => y.e1 - x.e1).slice(0, 6);
+  const ratio = r.debt && r.e1 ? r.debt / r.e1 : null;
+  const max = Math.max(r.sc1 || 0, r.sc4 || 0, cs.sc1 || 0, cs.sc4 || 0);
+  const bar = (label, v, cls) => v == null ? "" : `<div class="crow"><span>${label}</span><div class="track"><div class="fill ${cls}" style="width:${(v / max) * 100}%"></div></div><span class="v">${money(v)}</span></div>`;
+  return `<div class="stack">
+    <div class="detail-head"><button class="back" data-back>← Back</button>
+      <div class="eyebrow" style="margin-top:10px">${esc(a.name)}</div>
+      <h1>${esc(r.names.length === 1 ? r.names[0][0] : r.title)}</h1>
+      <div class="sub">${esc(r.school)} · ${esc(r.city)}, ${esc(r.state)} · ${esc(r.control)}</div>
+      ${r.names.length === 1 ? `<div class="fedname">Federal field: ${esc(r.title)}</div>` : ""}
+      <div class="chips">${addBtn(r.key)}${profs.length ? `<span class="chip good">Detailed outcomes available</span>` : `<span class="chip">Federal data only</span>`}</div>
+    </div>
+    ${profs.map((p) => `<div class="callout big"><div><b>${esc(p.program)}</b> (${esc(p.degree)}) has a detailed profile: placement, starting salary${p.employers.length ? ", employers" : ""}${p.requirements.length ? ", required courses" : ""}.</div><button class="btn primary small" data-profile="${p.id}">Open the detailed profile</button></div>`).join("")}
+    ${r.names.length ? `<section class="panel"><h3 class="h">${r.names.length === 1 ? "The program" : `${r.names.length} programs`} at ${esc(r.school)} in this field</h3>
+      <ul class="exact">${r.names.map(([n, d, u]) => `<li><b>${esc(n)}</b>${degreeNote(n, d) ? `<span class="muted small"> · ${esc(degreeNote(n, d))}</span>` : ""}${u ? ` <a class="small" href="${esc(u)}" target="_blank" rel="noopener">Catalog page</a>` : ""}</li>`).join("")}</ul>
+      <p class="muted small">Names come from the school's own catalog. We matched each one to its federal field automatically, so a match may be off until someone checks it. Pay and debt below cover every graduate in the field “${esc(r.title)}” at this school.</p></section>` : ""}
+    <section class="panel"><h3 class="h">Pay and debt</h3>
+      <div class="figures">
+        <div class="fig"><div class="n">${money(r.e1)}</div><div class="l">Median pay 1 year after graduating</div></div>
+        ${r.e4 != null ? `<div class="fig"><div class="n">${money(r.e4)}</div><div class="l">Median pay ${r.lateYrs} years after</div></div>` : ""}
+        <div class="fig"><div class="n">${money(r.debt)}</div><div class="l">Median federal loan debt</div></div>
+        ${ratio ? `<div class="fig"><div class="n">${Math.round(ratio * 100)}%</div><div class="l">Debt as a share of first-year pay</div></div>` : ""}
+        ${notWorking(r) != null ? `<div class="fig"><div class="n">${notWorking(r)}%</div><div class="l">Not working steadily a year out (broad field)</div></div>` : ""}
+      </div>
+      <p class="muted small">${r.src === "census"
+        ? `Pay counts graduates with steady work, from the U.S. Census Bureau (2023 dollars). Graduates with no job, or who earned less than a full-time minimum-wage job pays (about $15,000 a year), are left out of the pay figures${notWorking(r) != null ? `, and shown separately as “not working steadily”` : ""}.`
+        : `The Census doesn't cover this college, so pay is from the College Scorecard. It includes graduates working part-time or part of the year, so it runs lower than full-time pay.`} Debt is from the College Scorecard.</p>
+    </section>
+    ${censusSections(r)}
+    <section class="panel"><h3 class="h">Compared with this major at other colleges</h3>
+      <div class="compare-bars">${bar("This college, 1 year after", r.sc1, "")}${bar("All colleges (median), 1 year after", cs.sc1, "b")}${bar("This college, 4 years after", r.sc4, "")}${bar("All colleges (median), 4 years after", cs.sc4, "b")}</div>
+      <p class="muted small" style="margin-top:10px">This comparison uses College Scorecard figures, which every college has, so colleges are compared the same way. They include part-time work.</p>
+      ${pct != null ? `<div class="rank" style="margin-top:18px"><div class="small">First-year pay here is higher than at <b>${pct}%</b> of the ${cs.schools.toLocaleString()} colleges with this major.</div><div class="scale"><span class="pin" style="left:${pct}%"></span></div><div class="ends"><span>Lowest</span><span>Highest</span></div></div>` : ""}
+    </section>
+    <div class="split">
+      <section class="panel"><h3 class="h">Other majors at ${esc(r.school)}</h3>
+        ${others.length ? `<table class="mini-table">${others.map((x) => `<tr><td><button data-row="${x.key}">${esc(nameOf(x))}</button></td><td class="num">${kmoney(x.e1)}</td></tr>`).join("")}</table>` : `<p class="muted small">No other majors with earnings data.</p>`}</section>
+      <section class="panel"><h3 class="h">This major elsewhere in ${esc(r.state)}</h3>
+        ${nearby.length ? `<table class="mini-table">${nearby.map((x) => `<tr><td><button data-row="${x.key}">${esc(x.school)}</button></td><td class="num">${kmoney(x.e1)}</td></tr>`).join("")}</table>` : `<p class="muted small">No other colleges in this state with earnings data for this major.</p>`}</section>
+    </div>
+    <section class="panel"><h3 class="h">Careers this major leads to</h3><div class="tags">${(MAJORS[r.cip]?.careers || []).slice(0, 10).filter((s) => CAREERS[s]).map((s) => `<button class="chip" data-career="${s}">${esc(CAREERS[s].title)}</button>`).join("") || `<span class="muted small">Not listed yet.</span>`}</div>
+      <div style="margin-top:12px"><button class="btn ghost small" data-major="${r.cip}">Learn about this major</button></div></section>
+    <section class="panel"><h3 class="h">Source</h3><ol class="sources"><li><a href="${SCORECARD.url}" target="_blank" rel="noopener">${SCORECARD.name}</a>, U.S. Department of Education. Federal figures cover graduates in the field “${esc(r.title)}”${r.n ? `, based on ${r.n.toLocaleString()} graduates over two years` : ""}. They count only graduates who received federal aid.</li></ol></section>
+  </div>`;
+}
+
+function growthRows(e) {
+  const yrs = [["1 year", 0], ["5 years", 3], ["10 years", 6]].filter(([, i]) => e[i + 1] != null);
+  const top = Math.max(...yrs.map(([, i]) => e[i + 2] || e[i + 1]));
+  return `<div class="growth">${yrs.map(([label, i]) => `<div class="g-row"><span class="g-l">After ${label}</span>
+    <div class="g-track">${e[i] != null && e[i + 2] != null ? `<div class="g-range" style="left:${e[i] / top * 100}%;width:${(e[i + 2] - e[i]) / top * 100}%"></div>` : ""}<div class="g-mid" style="left:${e[i + 1] / top * 100}%"></div></div>
+    <span class="g-v"><b class="num">${money(e[i + 1])}</b>${e[i] != null && e[i + 2] != null ? `<span class="muted small"> middle half ${kmoney(e[i])} to ${kmoney(e[i + 2])}</span>` : ""}</span></div>`).join("")}</div>`;
+}
+function sectorBars(sectors, total) {
+  const top = sectors.filter((x) => x[1]).slice(0, 6);
+  return `<div class="compare-bars">${top.map((x) => `<div class="crow"><span>${esc(SECTORS[x[0]] || x[0])}</span><div class="track"><div class="fill" style="width:${x[1] / top[0][1] * 100}%"></div></div><span class="v">${Math.round(x[1] / total * 100)}%</span></div>`).join("")}</div>`;
+}
+function majorCensus(m) {
+  const e = PSEO_NAT.earn[m.cip], ind = PSEO_NAT.ind[m.cip.slice(0, 2)];
+  let html = "";
+  if (e) html += `<section class="panel"><h3 class="h">How pay grows over 10 years</h3>${growthRows(e)}
+    <p class="muted small">Typical yearly pay for graduates with this major, combined across the ${e[10]} states that share records with the U.S. Census Bureau (graduates' state figures weighted by size), in 2023 dollars. It shows how pay changes as careers progress.</p></section>`;
+  if (ind && ind.sectors.length) html += `<section class="panel"><h3 class="h">Industries graduates work in, one year out</h3>${sectorBars(ind.sectors, ind.n)}
+    <p class="muted small">For all graduates in the broad field “${esc(CIP2[m.cip.slice(0, 2)] || "this field")}”, from the U.S. Census Bureau. The Census doesn't break industries down by individual major.</p></section>`;
+  return html;
+}
+function censusSections(r) {
+  const e = pseoEarn(r), ind = pseoInd(r);
+  if (!e && !ind) return "";
+  let html = "";
+  if (e) {
+    const yrs = [["1 year", 0], ["5 years", 3], ["10 years", 6]].filter(([, i]) => e[i + 1] != null);
+    const top = Math.max(...yrs.map(([, i]) => e[i + 2] || e[i + 1]));
+    html += `<section class="panel"><h3 class="h">How pay grows after graduating</h3>
+      <div class="growth">${yrs.map(([label, i]) => `<div class="g-row"><span class="g-l">After ${label}</span>
+        <div class="g-track">${e[i] != null && e[i + 2] != null ? `<div class="g-range" style="left:${e[i] / top * 100}%;width:${(e[i + 2] - e[i]) / top * 100}%"></div>` : ""}<div class="g-mid" style="left:${e[i + 1] / top * 100}%"></div></div>
+        <span class="g-v"><b class="num">${money(e[i + 1])}</b>${e[i] != null && e[i + 2] != null ? `<span class="muted small"> middle half ${kmoney(e[i])} to ${kmoney(e[i + 2])}</span>` : ""}</span></div>`).join("")}</div>
+      <p class="muted small">Median yearly pay for graduates of this major at ${esc(r.school)}, with the range the middle half of graduates earn. From the U.S. Census Bureau, in 2023 dollars${e[9] ? `, based on ${e[9].toLocaleString()} employed graduates at year 1` : ""}.</p></section>`;
+  }
+  if (ind && ind.sectors.length) {
+    const tot = ind.n?.[0] || ind.sectors.reduce((a, s) => a + (s[1] || 0), 0);
+    const top = ind.sectors.filter((s) => s[1]).slice(0, 6);
+    const instate = ind.n?.[0] && ind.instate?.[0] != null ? Math.round(ind.instate[0] / ind.n[0] * 100) : null;
+    html += `<section class="panel"><h3 class="h">Where graduates work, one year out</h3>
+      <div class="compare-bars">${top.map((s) => `<div class="crow"><span>${esc(SECTORS[s[0]] || s[0])}</span><div class="track"><div class="fill" style="width:${s[1] / top[0][1] * 100}%"></div></div><span class="v">${Math.round(s[1] / tot * 100)}%</span></div>`).join("")}</div>
+      ${instate != null ? `<p class="small" style="margin-top:12px"><b>${instate}%</b> work in ${esc(r.state)}, the same state as the college.</p>` : ""}
+      <p class="muted small">Industries of the employers that graduates work for, from the U.S. Census Bureau. The Census reports this for broad fields, so it covers every ${esc(r.school)} graduate in “${esc(CIP2[r.cip.slice(0, 2)] || "this field")}”, not just this major.</p></section>`;
+  }
+  return html;
+}
+
+/* ---------- detail: a school's detailed program profile ---------- */
+function viewProfile(p) {
+  const o = p.outcomes, r = rowByKey.get(p.university_id + "_" + p.cip4), checked = p.outcome_source.status === "verified";
+  const parts = [["Working", o.pct_employed, "--s1"], ["Grad school", o.pct_continuing_education, "--s2"], ["Other plans", o.pct_other, "--s3"], ["Still looking", o.pct_still_seeking, "--s4"]].filter((x) => x[1] != null);
+  const people = (list, title) => {
+    const jobs = list.filter((i) => i.outcome_type === "job"), interns = list.filter((i) => i.outcome_type === "internship");
+    const ul = (xs) => `<ul class="names">${xs.map((i) => `<li>${esc(i.name)}${i.graduate_count ? ` (${i.graduate_count})` : ""}</li>`).join("")}</ul>`;
+    return jobs.length || interns.length ? `<div class="cols">${jobs.length ? `<div><h4>${title}: full-time jobs</h4>${ul(jobs)}</div>` : ""}${interns.length ? `<div><h4>${title}: internships</h4>${ul(interns)}</div>` : ""}</div>` : "";
+  };
+  const rows = [[`${startSal(o).kind === "average" ? "Average" : "Median"} starting salary (${esc(o.cohort)}, school report)`, startSal(o).v, ""], [`Median pay 1 year after (${r ? srcNote(r) : ""})`, r?.e1, "b"], [`Median pay ${r?.lateYrs || 4} years after (${r ? srcNote(r) : ""})`, r?.e4, "b"]].filter((x) => x[1] != null);
+  const max = Math.max(...rows.map((x) => x[1]), 1);
+  return `<div class="stack">
+    <div class="detail-head"><button class="back" data-back>← Back</button>
+      <div class="eyebrow" style="margin-top:10px">${esc(p.college || "")}</div>
+      <h1>${esc(p.program)}</h1>
+      <div class="sub">${esc(p.degree)} · ${esc(p.school)} · ${esc(p.location)}</div>
+      <div class="chips">${r ? addBtn(r.key) : ""}<span class="chip ${checked ? "good" : "warn"}">${checked ? "Checked by a person" : "Not yet checked"}</span><span class="chip">Outcomes: ${esc(o.cohort)}</span></div>
+    </div>
+    <section class="panel"><h3 class="h">Right after graduating</h3>
+      <div class="figures">
+        ${startSal(o).v != null ? `<div class="fig"><div class="n">${money(startSal(o).v)}</div><div class="l">${startSal(o).kind === "average" ? "Average" : "Median"} starting salary</div></div>` : `<div class="fig"><div class="n">Not shown</div><div class="l">Starting salary (too few graduates reported pay)</div></div>`}
+        ${o.pct_engaged != null ? `<div class="fig"><div class="n">${o.pct_engaged}%</div><div class="l">Working, in grad school or another planned path</div></div>` : ""}
+        ${o.internships_reported != null ? `<div class="fig"><div class="n">${o.internships_reported}</div><div class="l">Internships reported</div></div>` : ""}
+      </div>
+      ${parts.length ? `<div class="bar" role="img" aria-label="${parts.map((x) => `${x[0]} ${x[1]}%`).join(", ")}">${parts.map((x) => `<span style="width:${x[1]}%;background:var(${x[2]})"></span>`).join("")}</div>
+        <div class="legend">${parts.map((x) => `<span><i style="background:var(${x[2]})"></i>${x[0]} ${x[1]}%</span>`).join("")}</div>
+        <p class="muted small">Percentages${o.respondents ? ` of ${o.respondents} graduates the school heard from` : ""}${o.graduates_total ? ` (class of ${o.graduates_total})` : ""}, ${esc(o.measured_at)}.</p>` : ""}
+    </section>
+    ${rows.length ? `<section class="panel"><h3 class="h">Pay over time</h3><div class="compare-bars">${rows.map((x) => `<div class="crow"><span>${x[0]}</span><div class="track"><div class="fill ${x[2]}" style="width:${(x[1] / max) * 100}%"></div></div><span class="v">${money(x[1])}</span></div>`).join("")}</div>
+      ${r ? `<p class="muted small">Government figures cover everyone at ${esc(p.school)} in the field “${esc(r.title)}”, which may include other majors. Median federal debt: <b class="num">${money(r.debt)}</b>.</p>` : ""}</section>` : ""}
+    ${p.employers.length || p.job_titles.length ? `<section class="panel"><h3 class="h">Where graduates went</h3><div class="stack">${people(p.employers, "Employers")}${people(p.job_titles, "Job titles")}</div></section>` : ""}
+    ${o.notes ? `<section class="panel"><h3 class="h">From the school's report</h3><div class="callout">${esc(o.notes)}</div></section>` : ""}
+    <section class="panel"><h3 class="h">Required courses</h3>
+      ${p.requirements.length ? p.requirements.map((g) => {
+        const cr = g.credits_min == null ? "" : g.credits_min === g.credits_max ? `${g.credits_min} credits` : `${g.credits_min}–${g.credits_max} credits`;
+        return `<details><summary>${esc(g.name)}<span class="meta">${[cr, g.courses.length ? `${g.courses.length} courses` : "options not listed"].filter(Boolean).join(" · ")}</span></summary>
+          <ul class="courses">${g.courses.map((c) => `<li class="${c.or ? "or" : ""}"><code>${esc(c.code)}</code><span>${esc(c.title)}</span></li>`).join("")}</ul></details>`;
+      }).join("") : `<p class="muted small">Not collected yet. See the <a href="${esc(p.program_url)}" target="_blank" rel="noopener">official program page</a>.</p>`}
+    </section>
+    <section class="panel"><h3 class="h">Sources</h3><ol class="sources">
+      <li><a href="${esc(p.outcome_source.url)}" target="_blank" rel="noopener">${esc(p.outcome_source.name)}</a></li>
+      ${r ? `<li><a href="${SCORECARD.url}" target="_blank" rel="noopener">${SCORECARD.name}</a>, U.S. Department of Education</li>` : ""}
+      <li><a href="${esc(p.program_url)}" target="_blank" rel="noopener">Official program page</a></li></ol></section>
+  </div>`;
+}
+
+/* ---------- compare ---------- */
+function viewCompare() {
+  const rs = S.compare.map((k) => rowByKey.get(k)).filter(Boolean);
+  if (!rs.length) return `<div class="panel empty"><h2>Nothing to compare yet</h2><span class="muted">Tap “+ Compare” on up to 3 majors while you explore, then come back here.</span><a class="btn primary" href="#explore">Explore majors</a></div>`;
+  const best = (vals, low) => { const v = vals.filter((x) => x != null); if (v.length < 2) return null; return low ? Math.min(...v) : Math.max(...v); };
+  const line = (label, get, fmt, low) => {
+    const vals = rs.map(get), b = best(vals, low);
+    return `<tr><th scope="row">${label}</th>${vals.map((v) => `<td class="num ${b != null && v === b ? "best" : ""}">${fmt(v)}</td>`).join("")}</tr>`;
+  };
+  const prof = (r) => profileFor(r.uid, r.cip)[0];
+  return `<div class="stack">
+    <div><div class="eyebrow">Compare</div><h1 style="font-size:clamp(28px,4.5vw,40px);margin-top:4px">Side by side</h1><p class="muted">Green marks the best value in each row.</p></div>
+    <div class="table-wrap"><table class="cmp">
+      <tr><th scope="row">Major</th>${rs.map((r) => `<td><b>${esc(nameOf(r))}</b><div class="muted small">${esc(r.school)}</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn ghost small" data-row="${r.key}">Details</button><button class="btn ghost small" data-remove="${r.key}">Remove</button></div></td>`).join("")}</tr>
+      <tr><th scope="row">Location</th>${rs.map((r) => `<td>${esc(r.city)}, ${esc(r.state)}<div class="muted small">${esc(r.control)}</div></td>`).join("")}</tr>
+      ${line("Pay 1 year after", (r) => r.e1, money)}
+      ${line("Pay 4 years after", (r) => r.e4, money)}
+      ${line("Median federal debt", (r) => r.debt, money, true)}
+      ${line("Debt vs. first-year pay", (r) => r.debt && r.e1 ? Math.round((r.debt / r.e1) * 100) : null, (v) => v == null ? "—" : v + "%", true)}
+      ${line("Rank among colleges with this major", (r) => percentile(r.cip, r.sc1), (v) => v == null ? "—" : `higher than ${v}%`)}
+      ${line("Starting salary (school report)", (r) => prof(r) ? startSal(prof(r).outcomes).v ?? null : null, money)}
+      ${line("Working or in grad school (school report)", (r) => prof(r)?.outcomes.pct_engaged ?? null, (v) => v == null ? "—" : v + "%")}
+      <tr><th scope="row">Detailed outcomes</th>${rs.map((r) => { const p = prof(r); return `<td>${p ? `<button class="btn primary small" data-profile="${p.id}">Open profile</button>` : `<span class="muted small">Not yet</span>`}</td>`; }).join("")}</tr>
+    </table></div>
+    ${rs.length < 3 ? `<div><a class="btn ghost" href="#explore">Add another</a></div>` : ""}
+  </div>`;
+}
+
+/* ---------- render ---------- */
+const VIEWS = ["home", "fit", "majors", "careers", "programs", "compare"];
+function currentView() { let h = location.hash.slice(1); if (h === "explore") h = "programs"; return VIEWS.includes(h) ? h : "home"; }
+function render() {
+  const v = currentView(), d = S.detail;
+  document.querySelectorAll("nav a").forEach((a) => { if (a.dataset.view === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  if (d?.type === "row") app.innerHTML = viewRow(d.row);
+  else if (d?.type === "profile") app.innerHTML = viewProfile(d.profile);
+  else if (d?.type === "major") app.innerHTML = viewMajor(d.major);
+  else if (d?.type === "career") app.innerHTML = viewCareer(d.career);
+  else if (v === "fit") app.innerHTML = viewFit();
+  else if (v === "majors") { app.innerHTML = viewMajors(); wireMajors(); }
+  else if (v === "careers") { app.innerHTML = viewCareers(); wireCareers(); }
+  else if (v === "programs") { app.innerHTML = viewExplore(); wireExplore(); }
+  else if (v === "compare") app.innerHTML = viewCompare();
+  else app.innerHTML = viewHome();
+  renderTray();
+}
+S.cshown = 48;
+const history_ = [];
+function openDetail(d) { history_.push(S.detail); S.detail = d; render(); window.scrollTo(0, 0); }
+function toPrograms(patch) { Object.assign(S.filters, { q: "", area: "", cips: [], sort: "match" }, patch); S.shown = 30; go("programs"); }
+
+app.addEventListener("click", (e) => {
+  const t = e.target.closest("button, a"); if (!t) return;
+  if (t.dataset.key && t.classList.contains("add")) { toggleCompare(t.dataset.key); if (currentView() === "compare" && !S.detail) render(); return; }
+  if (t.dataset.row) return openDetail({ type: "row", row: rowByKey.get(t.dataset.row) });
+  if (t.dataset.profile) return openDetail({ type: "profile", profile: PROFILES.find((p) => String(p.id) === t.dataset.profile) });
+  if (t.dataset.major && MAJORS[t.dataset.major]) return openDetail({ type: "major", major: MAJORS[t.dataset.major] });
+  if (t.dataset.career && CAREERS[t.dataset.career]) return openDetail({ type: "career", career: CAREERS[t.dataset.career] });
+  if (t.dataset.remove) { S.compare = S.compare.filter((k) => k !== t.dataset.remove); saveCompare(); return render(); }
+  if (t.dataset.htab) {
+    t.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b === t)));
+    ["fromCareer", "fromMajor", "homeSearch"].forEach((id) => { document.getElementById(id).hidden = id !== t.dataset.htab; });
+    return document.querySelector(`#${t.dataset.htab} input`).focus();
+  }
+  if (t.hasAttribute("data-back")) { S.detail = history_.pop() || null; render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.area) { S.majorsQ = { q: "", area: t.dataset.area, career: "" }; return go("majors"); }
+  if (t.dataset.programsArea) return toPrograms({ area: t.dataset.programsArea });
+  if (t.dataset.programsCip) return toPrograms({ cips: [t.dataset.programsCip] });
+  if (t.dataset.programsCips) return toPrograms({ cips: t.dataset.programsCips.split(",").filter((c) => F.titles[c]) });
+  if (t.dataset.majorsFor) { S.majorsQ = { q: "", area: "", career: t.dataset.majorsFor }; return go("majors"); }
+  if (t.dataset.careersFor) { Object.assign(S.careersQ, { q: "", family: "", edu: "", major: t.dataset.careersFor }); S.cshown = 48; return go("careers"); }
+  if (t.dataset.cip) return toPrograms({ cips: [t.dataset.cip] });
+  if (t.dataset.unpick) { S.filters.cips = S.filters.cips.filter((c) => c !== t.dataset.unpick); S.shown = 30; return render(); }
+  if (t.dataset.w) { S.filters.weights[t.dataset.w] = +t.dataset.v; S.shown = 30; return render(); }
+  if (t.dataset.opt != null) {
+    const q = QUESTIONS[S.fit.step], i = +t.dataset.opt, cur = S.fit.answers[q.id] || [];
+    let next = cur.includes(i) ? cur.filter((x) => x !== i) : q.max === 1 ? [i] : [...cur, i].slice(-q.max);
+    S.fit.answers[q.id] = next;
+    if (q.max === 1 && next.length) { S.fit.step++; render(); window.scrollTo(0, 0); return; }
+    return render();
+  }
+  if (t.id === "fitNext") { S.fit.step++; render(); window.scrollTo(0, 0); return; }
+  if (t.id === "fitBack") { S.fit.step = Math.max(0, S.fit.step - 1); return render(); }
+  if (t.id === "fitRestart") { S.fit = { step: 0, answers: {} }; return render(); }
+});
+app.addEventListener("submit", (e) => {
+  if (e.target.id === "fromCareer" || e.target.id === "fromMajor") {
+    e.preventDefault();
+    const q = e.target.querySelector("input").value.trim().toLowerCase();
+    if (e.target.id === "fromCareer") {
+      const k = CAREER_LIST.find((x) => x.title.toLowerCase() === q) || CAREER_LIST.find((x) => careerMajors(x).length && (x.title + " " + x.titles.join(" ")).toLowerCase().includes(q));
+      if (k) { S.majorsQ = { q: "", area: "", career: k.soc }; return go("majors"); }
+      Object.assign(S.careersQ, { q, major: "" }); return go("careers");
+    }
+    const hits = majorList.filter((x) => x.title.toLowerCase().includes(q)).sort((a, b) => (b.title.toLowerCase() === q) - (a.title.toLowerCase() === q) || b.title.toLowerCase().startsWith(q) - a.title.toLowerCase().startsWith(q) || (cipStats[b.cip]?.schools || 0) - (cipStats[a.cip]?.schools || 0));
+    const m = hits[0];
+    if (m) { Object.assign(S.careersQ, { q: "", family: "", edu: "", major: m.cip }); S.cshown = 48; return go("careers"); }
+    S.majorsQ = { q, area: "", career: "" }; return go("majors");
+  }
+  if (e.target.id !== "homeSearch") return;
+  e.preventDefault();
+  toPrograms({ q: document.getElementById("homeQ").value.trim(), sort: "e1" });
+});
+
+render();
+</script>
