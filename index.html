@@ -57,6 +57,7 @@ h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font: 600 13px var(--body); padding: 4px 10px; border-radius: 999px; background: var(--raise); color: var(--ink); border: 1px solid transparent; }
 .chip.good { background: var(--good-soft); color: var(--good); }
 .chip.warn { background: var(--warn-soft); color: var(--warn); }
+sup.star { font-size: 0.6em; color: var(--warn); margin-left: 1px; }
 .chip.spark { background: var(--spark-soft); color: var(--ink); }
 .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; min-width: 0; }
@@ -339,7 +340,7 @@ ul.exact a { margin-left: 6px; }
 // Load the data files, then start the app (kept in the script below, which waits for them)
 (function () {
   const files = { data: "profiles", fields: "fields", careers: "careers", majors: "majors", names: "names", pseo: "pseo" };
-  Promise.all(Object.entries(files).map(([id, f]) => fetch("data/" + f + ".json?v=1792947944").then((r) => {
+  Promise.all(Object.entries(files).map(([id, f]) => fetch("data/" + f + ".json?v=1792953214").then((r) => {
     if (!r.ok) throw new Error(f + ": " + r.status);
     return r.text();
   }).then((txt) => { document.getElementById(id).textContent = txt; }))).then(() => {
@@ -432,6 +433,10 @@ for (const r of ROWS) {
   if (ce && ce[1] != null) Object.assign(r, { e1: ce[1], e4: ce[4], src: "census", lateYrs: 5 });
 }
 // Schools publish an average or a median starting salary; use whichever the report has
+// Results the school published only for a whole college (or the whole school), not for this exact major, carry a *
+const wide = (o) => !!(o && o.data_level && o.data_level !== "major");
+const star = (o) => wide(o) ? `<sup class="star" title="${o.data_level === "college" ? "College-wide" : "School-wide"} results">*</sup>` : "";
+const starKey = (o) => wide(o) ? `<p class="muted small"><b>*</b> ${o.data_level === "college" ? "College-wide results: these numbers are for all graduates of this college" : "School-wide results: these numbers are for all graduates of this school"}, not just this major. The school doesn't publish them by major.</p>` : "";
 const startSal = (o) => o.avg_starting_salary != null ? { v: o.avg_starting_salary, kind: "average" } : { v: o.median_starting_salary, kind: "median" };
 const srcNote = (r) => r.src === "census" ? "graduates with steady work" : "includes part-time";
 // The school's own program name(s) when we have them, otherwise the federal field name
@@ -447,6 +452,7 @@ const degreeNote = (n, d) => d && !n.replace(/\./g, "").toLowerCase().includes(d
 const rowByKey = new Map(ROWS.map((r) => [r.key, r]));
 const profileFor = (uid, cip) => PROFILES.filter((p) => p.university_id === uid && p.cip4 === cip);
 const profileKeys = new Set(PROFILES.map((p) => p.university_id + "_" + p.cip4));
+const majorKeys = new Set(PROFILES.filter((p) => !wide(p.outcomes)).map((p) => p.university_id + "_" + p.cip4));
 
 const byCip = {};
 for (const r of ROWS) (byCip[r.cip] ||= []).push(r);
@@ -489,7 +495,7 @@ function rankIn(sorted, v) { if (v == null || !sorted.length) return null; let l
 /* ---------- state ---------- */
 const S = {
   view: "home", detail: null, compare: [],
-  filters: { q: "", area: "", cips: [], state: "", control: "", minE1: 0, profilesOnly: false, sort: "match",
+  filters: { q: "", area: "", cips: [], state: "", control: "", minE1: 0, profilesOnly: false, majorOnly: false, sort: "match",
              home: "", weights: { pay: 2, debt: 2, home: 1, size: 0, outcomes: 0 } },
   majorsQ: { q: "", area: "", career: "" }, careersQ: { q: "", family: "", edu: "", sort: "pay", major: "" },
   shown: 30,
@@ -951,6 +957,7 @@ function filtered() {
     (!f.area || r.area === f.area) && (!f.cips.length || f.cips.includes(r.cip)) && (!f.state || r.state === f.state) &&
     (!f.control || r.control === f.control) && (!f.minE1 || (r.e1 || 0) >= f.minE1) &&
     (!f.profilesOnly || profileKeys.has(r.key)) &&
+    (!f.majorOnly || majorKeys.has(r.key)) &&
     (!words.length || words.every((w) => (r.title + " " + r.school + " " + r.city + " " + r.state + " " + r.names.map((x) => x[0]).join(" ")).toLowerCase().includes(w))));
   const s = f.sort, num = (x) => x ?? -1;
   if (s === "match") { for (const r of rs) r._m = matchInfo(r); rs.sort((a, b) => num(b._m.score) - num(a._m.score)); return rs; }
@@ -993,6 +1000,7 @@ function viewExplore() {
         <label>Type of college<select id="fcontrol"><option value="">Any</option>${["Public", "Private nonprofit", "Private for-profit"].map((c) => `<option ${f.control === c ? "selected" : ""}>${c}</option>`).join("")}</select></label>
         <div class="lbl"><span>Pay 1 year after: at least <b class="num" id="fminOut">${f.minE1 ? money(f.minE1) : "any"}</b></span><input type="range" id="fmin" min="0" max="120000" step="5000" value="${f.minE1}" aria-label="Minimum first-year pay"></div>
         <label class="check"><input type="checkbox" id="fprof" ${f.profilesOnly ? "checked" : ""}> Only detailed outcomes</label>
+        <label class="check"><input type="checkbox" id="fmajor" ${f.majorOnly ? "checked" : ""}> Only results by exact major (no *)</label>
         <button class="btn ghost small" id="freset">Clear filters</button>
       </aside>
       <div style="min-width:0">
@@ -1023,7 +1031,7 @@ function card(r) {
       <div class="figs"><span><b>${money(r.e1)}</b>pay after 1 yr</span>${r.e4 != null ? `<span><b>${money(r.e4)}</b>after ${r.lateYrs} yrs</span>` : ""}${pseoEarn(r)?.[7] ? `<span><b>${money(pseoEarn(r)[7])}</b>after 10 yrs</span>` : ""}<span><b>${money(r.debt)}</b>median debt</span>${r.n ? `<span><b>${r.n.toLocaleString()}</b>grads, 2 yrs</span>` : ""}</div>
     </div>
     ${r._m && S.filters.sort === "match" && r._m.reasons.length ? `<div class="reasons" style="grid-column:1/-1">${r._m.reasons.map((x) => `<span>${esc(x)}</span>`).join("")}</div>` : ""}
-    <div class="side">${r._m && S.filters.sort === "match" && r._m.score != null ? `<span class="score" title="How well this fits what you said matters">${r._m.score} match</span>` : ""}${prof ? `<span class="chip good">Detailed outcomes</span>` : ""}${addBtn(r.key)}</div>
+    <div class="side">${r._m && S.filters.sort === "match" && r._m.score != null ? `<span class="score" title="How well this fits what you said matters">${r._m.score} match</span>` : ""}${prof ? (majorKeys.has(r.key) ? `<span class="chip good">Detailed outcomes</span>` : `<span class="chip good" title="College-wide results, not just this major">College-wide outcomes*</span>`) : ""}${addBtn(r.key)}</div>
   </article>`;
 }
 
@@ -1046,8 +1054,9 @@ function wireExplore() {
   document.getElementById("fcontrol").addEventListener("change", (e) => set("control", e.target.value));
   document.getElementById("fmin").addEventListener("input", (e) => { const v = +e.target.value; document.getElementById("fminOut").textContent = v ? money(v) : "any"; set("minE1", v); });
   document.getElementById("fprof").addEventListener("change", (e) => set("profilesOnly", e.target.checked));
+  document.getElementById("fmajor").addEventListener("change", (e) => set("majorOnly", e.target.checked));
   document.getElementById("fsort").addEventListener("change", (e) => set("sort", e.target.value));
-  document.getElementById("freset").addEventListener("click", () => { Object.assign(f, { q: "", area: "", cips: [], state: "", control: "", minE1: 0, profilesOnly: false }); render(); });
+  document.getElementById("freset").addEventListener("click", () => { Object.assign(f, { q: "", area: "", cips: [], state: "", control: "", minE1: 0, profilesOnly: false, majorOnly: false }); render(); });
   document.getElementById("more").addEventListener("click", () => { S.shown += 30; drawResults(); });
   document.getElementById("ftoggle").addEventListener("click", () => document.getElementById("filters").classList.toggle("open"));
   drawResults();
@@ -1157,19 +1166,19 @@ function viewProfile(p) {
     const ul = (xs) => `<ul class="names">${xs.map((i) => `<li>${esc(i.name)}${i.graduate_count ? ` (${i.graduate_count})` : ""}</li>`).join("")}</ul>`;
     return jobs.length || interns.length ? `<div class="cols">${jobs.length ? `<div><h4>${title}: full-time jobs</h4>${ul(jobs)}</div>` : ""}${interns.length ? `<div><h4>${title}: internships</h4>${ul(interns)}</div>` : ""}</div>` : "";
   };
-  const rows = [[`${startSal(o).kind === "average" ? "Average" : "Median"} starting salary (${esc(o.cohort)}, school report)`, startSal(o).v, ""], [`Median pay 1 year after (${r ? srcNote(r) : ""})`, r?.e1, "b"], [`Median pay ${r?.lateYrs || 4} years after (${r ? srcNote(r) : ""})`, r?.e4, "b"]].filter((x) => x[1] != null);
+  const rows = [[`${startSal(o).kind === "average" ? "Average" : "Median"} starting salary (${esc(o.cohort)}, school report${wide(o) ? ", " + o.data_level + "-wide*" : ""})`, startSal(o).v, ""], [`Median pay 1 year after (${r ? srcNote(r) : ""})`, r?.e1, "b"], [`Median pay ${r?.lateYrs || 4} years after (${r ? srcNote(r) : ""})`, r?.e4, "b"]].filter((x) => x[1] != null);
   const max = Math.max(...rows.map((x) => x[1]), 1);
   return `<div class="stack">
     <div class="detail-head"><button class="back" data-back>← Back</button>
       <div class="eyebrow" style="margin-top:10px">${esc(p.college || "")}</div>
       <h1>${esc(p.program)}</h1>
       <div class="sub">${esc(p.degree)} · ${esc(p.school)} · ${esc(p.location)}</div>
-      <div class="chips">${r ? addBtn(r.key) : ""}<span class="chip ${checked ? "good" : "warn"}">${checked ? "Checked by a person" : "Not yet checked"}</span><span class="chip">Outcomes: ${esc(o.cohort)}</span></div>
+      <div class="chips">${r ? addBtn(r.key) : ""}<span class="chip ${checked ? "good" : "warn"}">${checked ? "Checked by a person" : "Not yet checked"}</span><span class="chip">Outcomes: ${esc(o.cohort)}</span>${wide(o) ? `<span class="chip warn">* ${o.data_level === "college" ? "College-wide" : "School-wide"} results</span>` : ""}</div>
     </div>
-    <section class="panel"><h3 class="h">Right after graduating</h3>
+    <section class="panel"><h3 class="h">Right after graduating${star(o)}</h3>${starKey(o)}
       <div class="figures">
-        ${startSal(o).v != null ? `<div class="fig"><div class="n">${money(startSal(o).v)}</div><div class="l">${startSal(o).kind === "average" ? "Average" : "Median"} starting salary</div></div>` : `<div class="fig"><div class="n">Not shown</div><div class="l">Starting salary (too few graduates reported pay)</div></div>`}
-        ${o.pct_engaged != null ? `<div class="fig"><div class="n">${o.pct_engaged}%</div><div class="l">Working, in grad school or another planned path</div></div>` : ""}
+        ${startSal(o).v != null ? `<div class="fig"><div class="n">${money(startSal(o).v)}${star(o)}</div><div class="l">${startSal(o).kind === "average" ? "Average" : "Median"} starting salary</div></div>` : `<div class="fig"><div class="n">Not shown</div><div class="l">Starting salary (too few graduates reported pay)</div></div>`}
+        ${o.pct_engaged != null ? `<div class="fig"><div class="n">${o.pct_engaged}%${star(o)}</div><div class="l">Working, in grad school or another planned path</div></div>` : ""}
         ${o.internships_reported != null ? `<div class="fig"><div class="n">${o.internships_reported}</div><div class="l">Internships reported</div></div>` : ""}
       </div>
       ${parts.length ? `<div class="bar" role="img" aria-label="${parts.map((x) => `${x[0]} ${x[1]}%`).join(", ")}">${parts.map((x) => `<span style="width:${x[1]}%;background:var(${x[2]})"></span>`).join("")}</div>
@@ -1178,7 +1187,7 @@ function viewProfile(p) {
     </section>
     ${rows.length ? `<section class="panel"><h3 class="h">Pay over time</h3><div class="compare-bars">${rows.map((x) => `<div class="crow"><span>${x[0]}</span><div class="track"><div class="fill ${x[2]}" style="width:${(x[1] / max) * 100}%"></div></div><span class="v">${money(x[1])}</span></div>`).join("")}</div>
       ${r ? `<p class="muted small">Government figures cover everyone at ${esc(p.school)} in the field “${esc(r.title)}”, which may include other majors. Median federal debt: <b class="num">${money(r.debt)}</b>.</p>` : ""}</section>` : ""}
-    ${p.employers.length || p.job_titles.length ? `<section class="panel"><h3 class="h">Where graduates went</h3><div class="stack">${people(p.employers, "Employers")}${people(p.job_titles, "Job titles")}</div></section>` : ""}
+    ${p.employers.length || p.job_titles.length ? `<section class="panel"><h3 class="h">Where graduates went${star(o)}</h3><div class="stack">${people(p.employers, "Employers")}${people(p.job_titles, "Job titles")}</div></section>` : ""}
     ${o.notes ? `<section class="panel"><h3 class="h">From the school's report</h3><div class="callout">${esc(o.notes)}</div></section>` : ""}
     <section class="panel"><h3 class="h">Required courses</h3>
       ${p.requirements.length ? p.requirements.map((g) => {
@@ -1201,7 +1210,7 @@ function viewCompare() {
   const best = (vals, low) => { const v = vals.filter((x) => x != null); if (v.length < 2) return null; return low ? Math.min(...v) : Math.max(...v); };
   const line = (label, get, fmt, low) => {
     const vals = rs.map(get), b = best(vals, low);
-    return `<tr><th scope="row">${label}</th>${vals.map((v) => `<td class="num ${b != null && v === b ? "best" : ""}">${fmt(v)}</td>`).join("")}</tr>`;
+    return `<tr><th scope="row">${label}</th>${vals.map((v, i) => `<td class="num ${b != null && v === b ? "best" : ""}">${fmt(v, rs[i])}</td>`).join("")}</tr>`;
   };
   const prof = (r) => profileFor(r.uid, r.cip)[0];
   return `<div class="stack">
@@ -1214,7 +1223,7 @@ function viewCompare() {
       ${line("Median federal debt", (r) => r.debt, money, true)}
       ${line("Debt vs. first-year pay", (r) => r.debt && r.e1 ? Math.round((r.debt / r.e1) * 100) : null, (v) => v == null ? "—" : v + "%", true)}
       ${line("Rank among colleges with this major", (r) => percentile(r.cip, r.sc1), (v) => v == null ? "—" : `higher than ${v}%`)}
-      ${line("Starting salary (school report)", (r) => prof(r) ? startSal(prof(r).outcomes).v ?? null : null, money)}
+      ${line("Starting salary (school report; * = college-wide)", (r) => prof(r) ? startSal(prof(r).outcomes).v ?? null : null, (v, r) => money(v) + (r && prof(r) ? star(prof(r).outcomes) : ""))}
       ${line("Working or in grad school (school report)", (r) => prof(r)?.outcomes.pct_engaged ?? null, (v) => v == null ? "—" : v + "%")}
       <tr><th scope="row">Detailed outcomes</th>${rs.map((r) => { const p = prof(r); return `<td>${p ? `<button class="btn primary small" data-profile="${p.id}">Open profile</button>` : `<span class="muted small">Not yet</span>`}</td>`; }).join("")}</tr>
     </table></div>
