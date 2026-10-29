@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Ask Pathways</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Prototype "Ask a question" page. Standalone, so the main site's styles are untouched; it reuses the same color tokens.
+   One centered column up to 720px: intro, the ask form, then answered questions with a search box. */
+:root {
+  --bg: #f5f6fa; --surface: #ffffff; --raise: #eef0f8; --ink: #141a33; --muted: #5b6380; --line: #dde1ee;
+  --accent: #2f4bd8; --accent-ink: #ffffff; --accent-soft: #e3e8ff; --spark: #f2a93b; --spark-soft: #fdf0d9;
+  --good: #24794a; --good-soft: #def3e6; --warn: #9a5800; --warn-soft: #fbeccf;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1324; --surface: #171c33; --raise: #1e2440; --ink: #e9ecf7; --muted: #a0a8c6; --line: #2a3152;
+  --accent: #8ea0ff; --accent-ink: #0f1324; --accent-soft: #252e5c; --spark: #f5b955; --spark-soft: #3a2f1a;
+  --good: #7fd6a2; --good-soft: #1c3a2a; --warn: #f3bd6a; --warn-soft: #3a2e1a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1324; --surface: #171c33; --raise: #1e2440; --ink: #e9ecf7; --muted: #a0a8c6; --line: #2a3152;
+  --accent: #8ea0ff; --accent-ink: #0f1324; --accent-soft: #252e5c; --spark: #f5b955; --spark-soft: #3a2f1a;
+  --good: #7fd6a2; --good-soft: #1c3a2a; --warn: #f3bd6a; --warn-soft: #3a2e1a; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 var(--body); }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.col { max-width: 720px; margin: 0 auto; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 15px; }
+
+.top { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
+.top .col { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; }
+.brand { font: 800 22px var(--display); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.brand svg { width: 26px; height: 26px; }
+.back { font-weight: 600; text-decoration: none; padding: 10px 4px; }
+
+main { padding-block: 24px 80px; display: grid; gap: 28px; }
+.intro h1 { font-size: clamp(30px, 7vw, 44px); line-height: 1.08; letter-spacing: -0.02em; }
+.intro p { margin: 10px 0 0; }
+.banner { background: var(--spark-soft); color: var(--ink); border-radius: var(--radius); padding: 12px 14px; font-size: 15px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 14px; }
+.panel h2 { font-size: 22px; }
+label { display: grid; gap: 6px; font-weight: 600; }
+label .hint { font-weight: 400; font-size: 15px; color: var(--muted); }
+/* 16px+ inputs stop phones from zooming in when a field is tapped */
+input[type=text], input[type=search], select, textarea { width: 100%; font-size: 17px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+textarea { min-height: 120px; resize: vertical; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+.check input { width: 22px; height: 22px; margin: 2px 0 0; flex: none; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.count { font-size: 14px; color: var(--muted); }
+.btn { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; min-height: 48px; padding: 12px 22px; font-weight: 700; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+.btn[disabled] { opacity: 0.6; cursor: default; }
+.msg { border-radius: 10px; padding: 12px 14px; font-size: 15px; }
+.msg.ok { background: var(--good-soft); color: var(--good); }
+.msg.err { background: var(--warn-soft); color: var(--warn); }
+@media (max-width: 520px) { .btn { width: 100%; } }
+
+.list { display: grid; gap: 12px; }
+.qa { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; }
+.qa .q { font-weight: 700; font-size: 18px; }
+.qa .meta { font-size: 14px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chip { font: 600 13px var(--body); padding: 3px 10px; border-radius: 999px; background: var(--raise); }
+.chip.example { background: var(--spark-soft); }
+.qa .a { border-left: 3px solid var(--accent); padding-left: 12px; white-space: pre-line; }
+.qa .who { font-size: 14px; color: var(--muted); }
+.empty { text-align: center; padding: 24px; color: var(--muted); }
+footer { border-top: 1px solid var(--line); padding-block: 20px 60px; color: var(--muted); font-size: 15px; }
+</style>
+</head>
+<body>
+
+<header class="top gut">
+  <div class="col">
+    <a class="brand" href="../#home" aria-label="Pathways home">
+      <svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="5" cy="21" r="3.2" fill="var(--accent)"/><circle cx="21" cy="5" r="3.2" fill="var(--spark)"/><path d="M5 21 C 5 12, 21 14, 21 5" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="2.5 3" stroke-linecap="round"/></svg>
+      Pathways
+    </a>
+    <a class="back" href="../#home">Back to explorer</a>
+  </div>
+</header>
+
+<main class="gut"><div class="col" style="display:grid;gap:28px">
+  <section class="intro">
+    <h1>Ask a question</h1>
+    <p class="muted">Wondering which major leads where, what a career pays, or how two colleges compare? Ask here. A real person reads every question, and it appears below once it has an answer.</p>
+  </section>
+
+  <div class="banner" id="previewBanner" hidden>Preview: this page isn't connected to the database yet, so the answers below are examples and sending a question won't save it.</div>
+
+  <form class="panel" id="askForm" novalidate>
+    <h2>Your question</h2>
+    <label>Topic
+      <select id="topic">
+        <option value="general">Something else</option>
+        <option value="majors">Choosing a major</option>
+        <option value="colleges">Colleges and programs</option>
+        <option value="careers">Careers and jobs</option>
+        <option value="pay">Pay and debt</option>
+        <option value="admissions">Getting in</option>
+      </select>
+    </label>
+    <label>Question
+      <span class="hint">Leave out your name, school, email, phone, and social media. Questions are public once answered.</span>
+      <textarea id="body" maxlength="600" required placeholder="Example: Is a nursing degree at a state school worth the debt?"></textarea>
+      <span class="count"><span id="bodyCount">0</span> / 600</span>
+    </label>
+    <label>Nickname (optional)
+      <span class="hint">Something made up, not your real name.</span>
+      <input type="text" id="nickname" maxlength="24" autocomplete="off" placeholder="Future engineer">
+    </label>
+    <label class="check"><input type="checkbox" id="age" required> <span>I'm 13 or older, and I'll be kind. Questions that are mean, off-topic, or share personal details won't be posted.</span></label>
+    <div id="captcha"></div>
+    <div class="row">
+      <span class="small muted">Answers usually take a few days.</span>
+      <button class="btn" id="send" type="submit">Send question</button>
+    </div>
+    <div class="msg" id="formMsg" role="status" hidden></div>
+  </form>
+
+  <section style="display:grid;gap:14px" aria-labelledby="answeredHead">
+    <div class="row"><h2 id="answeredHead" style="font-size:24px">Answered questions</h2></div>
+    <input type="search" id="search" placeholder="Search answered questions" aria-label="Search answered questions">
+    <div class="list" id="list"><div class="empty">Loading…</div></div>
+  </section>
+</div></main>
+
+<footer class="gut"><div class="col">
+  Answers are general guidance, not official advice from any school. Check program details and deadlines with the college itself.
+</div></footer>
+
+<script>
+// Fill these in to connect the page. Both are public by design (safe in a web page):
+// the Project URL and the "anon / publishable" key from Supabase > Project Settings > API keys.
+// Never put the service_role / secret key here.
+const SUPABASE_URL = "https://szsuupygmcofbtqbrnhc.supabase.co";
+const SUPABASE_ANON_KEY = "";          // paste the publishable key to go live
+const TURNSTILE_SITE_KEY = "";         // optional: Cloudflare Turnstile site key (free) to stop bots
+
+const TOPICS = { general: "General", majors: "Majors", colleges: "Colleges", careers: "Careers", pay: "Pay and debt", admissions: "Getting in" };
+const EXAMPLES = [
+  { id: -1, topic: "majors", nickname: "Undecided junior", body: "I like math but not coding. What majors should I look at?",
+    answer: "Statistics, actuarial science, economics, and finance all lean on math more than programming. On the Majors page, compare their typical pay one and five years after graduating, then open Programs to see which schools near you offer each one by its exact name.",
+    answered_by: "Kevin, Pathways", answered_at: "2026-10-20T12:00:00Z" },
+  { id: -2, topic: "pay", nickname: null, body: "Why is the pay for the same major different at different colleges?",
+    answer: "Graduates of the same major end up in different places: different regions, employers, and grad school rates all change the numbers. Our pay figures come from the Census Bureau and the College Scorecard for each school's own graduates, so they reflect that school's alumni, not a national average.",
+    answered_by: "Kevin, Pathways", answered_at: "2026-10-18T12:00:00Z" },
+];
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const live = Boolean(SUPABASE_ANON_KEY);
+let db = null, questions = [], captchaToken = null;
+
+function loadScript(src) {
+  return new Promise((ok, fail) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = fail; document.head.append(s); });
+}
+
+function render() {
+  const term = $("search").value.trim().toLowerCase();
+  const shown = questions.filter((q) => !term || (q.body + " " + q.answer).toLowerCase().includes(term));
+  if (!shown.length) {
+    $("list").innerHTML = `<div class="empty">${questions.length ? "No answered questions match that search." : "No answered questions yet. Be the first to ask."}</div>`;
+    return;
+  }
+  $("list").innerHTML = shown.map((q) => `
+    <article class="qa">
+      <div class="meta"><span class="chip">${esc(TOPICS[q.topic] || "General")}</span>${q.id < 0 ? '<span class="chip example">Example</span>' : ""}<span>Asked by ${esc(q.nickname || "a student")}</span></div>
+      <div class="q">${esc(q.body)}</div>
+      <div class="a">${esc(q.answer)}</div>
+      <div class="who">Answered by ${esc(q.answered_by || "Pathways")}${q.answered_at ? " on " + new Date(q.answered_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : ""}</div>
+    </article>`).join("");
+}
+
+async function loadAnswered() {
+  if (!live) { questions = EXAMPLES; render(); return; }
+  const { data, error } = await db.from("questions")
+    .select("id, topic, body, nickname, answer, answered_by, answered_at")
+    .eq("status", "approved").order("answered_at", { ascending: false }).limit(200);
+  if (error) { $("list").innerHTML = '<div class="empty">Answered questions couldn\'t load. Please try again later.</div>'; return; }
+  questions = data; render();
+}
+
+function say(text, ok) { const m = $("formMsg"); m.hidden = false; m.className = "msg " + (ok ? "ok" : "err"); m.textContent = text; }
+
+// Mirrors the database checks so students hear about problems before sending.
+function precheck(body, nickname) {
+  const both = body + " " + nickname;
+  if (body.length < 10) return "Please write a little more so we can answer well.";
+  if (/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(both)) return "Please leave out email addresses. Questions are public once answered.";
+  if (/\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(both)) return "Please leave out phone numbers. Questions are public once answered.";
+  if (/(https?:\/\/|www\.)/i.test(body)) return "Please leave out links.";
+  if (!$("age").checked) return "Please confirm you're 13 or older.";
+  return null;
+}
+
+async function send(e) {
+  e.preventDefault();
+  const body = $("body").value.trim(), nickname = $("nickname").value.trim();
+  const problem = precheck(body, nickname);
+  if (problem) { say(problem, false); return; }
+  if (!live) { say("Preview only: in the live version this question would now wait for an answer.", true); return; }
+  if (TURNSTILE_SITE_KEY && !captchaToken) { say("Please finish the quick check above first.", false); return; }
+  $("send").disabled = true;
+  try {
+    // Each visitor gets an anonymous session: no email or password, nothing personal stored.
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) {
+      const { error } = await db.auth.signInAnonymously(captchaToken ? { options: { captchaToken } } : undefined);
+      if (error) throw error;
+    }
+    const { error } = await db.from("questions").insert({ topic: $("topic").value, body, nickname: nickname || null });
+    if (error) throw error;
+    $("askForm").reset(); $("bodyCount").textContent = "0";
+    say("Thanks! Your question was sent. It will show up below once it has an answer.", true);
+  } catch (err) {
+    say(err.message || "Something went wrong. Please try again later.", false);
+  } finally {
+    $("send").disabled = false;
+    if (window.turnstile) { window.turnstile.reset(); captchaToken = null; }
+  }
+}
+
+$("body").addEventListener("input", () => { $("bodyCount").textContent = $("body").value.length; });
+$("search").addEventListener("input", render);
+$("askForm").addEventListener("submit", send);
+
+(async () => {
+  $("previewBanner").hidden = live;
+  if (live) {
+    await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js");
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (TURNSTILE_SITE_KEY) {
+      await loadScript("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit");
+      window.turnstile.render("#captcha", { sitekey: TURNSTILE_SITE_KEY, callback: (t) => { captchaToken = t; } });
+    }
+  }
+  loadAnswered();
+})();
+</script>
+</body>
+</html>
