@@ -339,6 +339,43 @@ ul.exact a { margin-left: 6px; }
 .g-mid { position: absolute; top: -4px; width: 4px; height: 20px; margin-left: -2px; border-radius: 2px; background: var(--accent); }
 @media (max-width: 760px) { .g-row { grid-template-columns: 1fr; gap: 6px; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+/* Phones, calmer look: plain numerals instead of typewriter digits, smaller and lighter headings,
+   sentence-case labels, soft shadows instead of outlined boxes, and secondary controls folded away. */
+.more-toggle { display: none; }
+@media (max-width: 640px) {
+  :root { --mono: var(--body); }
+  .num, .fig .n { font-variant-numeric: tabular-nums; }
+  .tile .row b, .paylabels b, .crow .v { font-weight: 700; }
+  .fig .n { font-weight: 700; font-size: 26px; }
+  .card .figs b { font-weight: 700; font-size: 17px; }
+  .eyebrow, .ladder .stepcol h4, .panel h3.h { text-transform: none; letter-spacing: 0; font-size: 14px; }
+  h1, h2, h3 { letter-spacing: -0.01em; }
+  main h1 { font-size: 27px !important; font-weight: 700; line-height: 1.18; }
+  .hero h1 { font-size: 30px !important; font-weight: 700; letter-spacing: -0.02em; }
+  .hero p { font-size: 17px; margin: 12px auto 20px; }
+  .detail-head h1 { font-size: 26px; }
+  .stack > div > p.muted { font-size: 16px; line-height: 1.5; }
+  .stack { gap: 16px; }
+  .panel, .card, .tile, .door, .starter { border-color: transparent; border-radius: 18px; box-shadow: 0 1px 2px rgba(20, 30, 80, .05), 0 6px 20px -12px rgba(20, 30, 80, .18); }
+  .card .t, .tile h3, .door h3 { font-size: 18px; font-weight: 700; }
+  .door { padding: 18px; }
+  .door.feature { box-shadow: 0 10px 24px -14px rgba(47, 75, 216, .6); }
+  .seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; background: var(--raise); border-radius: 12px; padding: 3px; }
+  .seg button, html .seg button { border: 0; background: transparent; border-radius: 9px; padding: 6px 4px; font-size: 15px; min-height: 36px; color: var(--muted); }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 700; box-shadow: 0 1px 3px rgba(20, 30, 80, .15); }
+  .list-head { display: grid; gap: 12px; }
+  .list-head input, .list-head select { border-radius: 12px; padding: 11px 12px; }
+  .list-head:not(.open) > label:not(:first-of-type), .prefs-panel:not(.open) .prefs { display: none; }
+  .more-toggle { display: flex; justify-content: space-between; align-items: center; width: 100%; border: 0; background: var(--raise); color: var(--ink);
+                 border-radius: 12px; padding: 10px 14px; font-weight: 600; font-size: 15px; cursor: pointer; }
+  .more-toggle span { font-size: 20px; line-height: 1; color: var(--muted); }
+  .chip { font-weight: 600; }
+  .score { font-size: 14px; padding: 4px 9px; }
+  html .card .add { min-height: 34px; font-size: 14px; padding: 4px 14px; }
+  html .tray .col { flex-wrap: nowrap; gap: 8px; font-size: 15px; }
+  html .tray .btn { font-size: 14px; padding: 6px 12px; min-height: 36px; white-space: nowrap; }
+}
+@media (max-width: 640px) and (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .panel, :root:not([data-theme="light"]) .card, :root:not([data-theme="light"]) .tile { box-shadow: none; border-color: var(--line); } }
 </style>
 
 <header class="top gut">
@@ -534,6 +571,7 @@ function rankIn(sorted, v) { if (v == null || !sorted.length) return null; let l
 
 /* ---------- state ---------- */
 const S = {
+  more: {},
   view: "home", detail: null, compare: [],
   filters: { q: "", area: "", cips: [], state: "", control: "", minE1: 0, profilesOnly: false, majorOnly: false, sort: "match",
              home: "", weights: { pay: 2, debt: 2, home: 1, size: 0, outcomes: 0 } },
@@ -757,14 +795,20 @@ function viewFitResults() {
   </div>`;
 }
 
+/* On phones the secondary controls fold away behind one button so a page opens on content, not a form. */
+function moreToggle(key, label) {
+  return `<button type="button" class="more-toggle" data-more="${key}" aria-expanded="${!!S.more[key]}">${label}<span aria-hidden="true">${S.more[key] ? "−" : "+"}</span></button>`;
+}
+
 /* ---------- majors ---------- */
 function viewMajors() {
   const f = S.majorsQ;
   return `<div class="stack">
     <div><div class="eyebrow">Research majors</div><h1 style="font-size:clamp(28px,4.5vw,40px);margin-top:4px">What each major is and where it leads</h1>
       <p class="muted" style="max-width:68ch;margin:6px 0 0">National figures across every college that offers the major. To compare specific colleges, use <a href="#programs">Programs</a>.</p></div>
-    <div class="list-head">
+    <div class="list-head${S.more.majors || f.area || f.career ? " open" : ""}">
       <label>Search majors<input type="search" id="mq" value="${esc(f.q)}" placeholder="e.g. nursing, data, marine"></label>
+      ${moreToggle("majors", "More filters")}
       <label>Career area<select id="marea"><option value="">All areas</option>${[...AREAS, OTHER].map((a) => `<option value="${a.key}" ${f.area === a.key ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>
       <label>Leads to the career<select id="mcareer"><option value="">Any career</option>${CAREER_LIST.filter((k) => careerMajors(k).length).map((k) => `<option value="${k.soc}" ${f.career === k.soc ? "selected" : ""}>${esc(k.title)}</option>`).join("")}</select></label>
     </div>
@@ -854,8 +898,9 @@ function viewCareers() {
   return `<div class="stack">
     <div><div class="eyebrow">Explore careers</div><h1 style="font-size:clamp(28px,4.5vw,40px);margin-top:4px">What the work is really like</h1>
       <p class="muted" style="max-width:68ch;margin:6px 0 0">A day in the life, how each career grows, pay at every stage and how many jobs there will be. National data from the U.S. Department of Labor.</p></div>
-    <div class="list-head">
+    <div class="list-head${S.more.careers || f.major || f.family || f.edu ? " open" : ""}">
       <label>Search careers<input type="search" id="cq" value="${esc(f.q)}" placeholder="e.g. nurse, analyst, teacher"></label>
+      ${moreToggle("careers", "Filter and sort")}
       <label>From the major<select id="cmajor"><option value="">Any major</option>${majorList.filter((m) => m.careers.length).map((m) => `<option value="${m.cip}" ${f.major === m.cip ? "selected" : ""}>${esc(m.title)}</option>`).join("")}</select></label>
       <label>Job family<select id="cfam"><option value="">All</option>${[...new Set(Object.values(FAMILIES))].sort().map((x) => `<option ${f.family === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
       <label>Education to start<select id="cedu"><option value="">Any</option>${EDU_LEVELS.map((x) => `<option ${f.edu === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
@@ -1018,11 +1063,12 @@ function viewExplore() {
   return `<div class="stack">
     <div><div class="eyebrow">Find your programs</div><h1 style="font-size:clamp(28px,4.5vw,40px);margin-top:4px">Programs ranked for you</h1>
     <p class="muted" style="max-width:68ch;margin:6px 0 0">Pick the majors you're considering and tell us what matters. Every college that offers them is scored against others offering the same major.</p></div>
-    <section class="panel stack">
+    <section class="panel stack prefs-panel${S.more.prefs ? " open" : ""}">
       <div class="lbl" style="display:grid;gap:8px"><span class="eyebrow">Majors you're considering</span>
         <div class="picked">${f.cips.map((c) => `<span class="chip">${esc(F.titles[c])}<button data-unpick="${c}" aria-label="Remove ${esc(F.titles[c])}">×</button></span>`).join("") || `<span class="muted small">All majors. Add one or more to focus the list.</span>`}</div>
         <select id="fadd" style="max-width:420px;font:15px var(--body);padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)"><option value="">+ Add a major</option>${cips.filter((m) => !f.cips.includes(m.cip)).map((m) => `<option value="${m.cip}">${esc(m.title)}</option>`).join("")}</select>
       </div>
+      ${moreToggle("prefs", "What matters to you")}
       <div class="prefs">
         <label class="lbl">Your home state<select id="fhome" style="font:15px var(--body);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)"><option value="">Not set</option>${STATES.map((s) => `<option ${f.home === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
         <div class="lbl">High pay matters${seg("pay", ["No", "Some", "A lot", "Most"])}</div>
@@ -1316,6 +1362,7 @@ app.addEventListener("click", (e) => {
   if (t.dataset.careersFor) { Object.assign(S.careersQ, { q: "", family: "", edu: "", major: t.dataset.careersFor }); S.cshown = 48; return go("careers"); }
   if (t.dataset.cip) return toPrograms({ cips: [t.dataset.cip] });
   if (t.dataset.unpick) { S.filters.cips = S.filters.cips.filter((c) => c !== t.dataset.unpick); S.shown = 30; return render(); }
+  if (t.dataset.more) { S.more[t.dataset.more] = !t.closest(".open"); return render(); }
   if (t.dataset.w) { S.filters.weights[t.dataset.w] = +t.dataset.v; S.shown = 30; return render(); }
   if (t.dataset.opt != null) {
     const q = QUESTIONS[S.fit.step], i = +t.dataset.opt, cur = S.fit.answers[q.id] || [];
