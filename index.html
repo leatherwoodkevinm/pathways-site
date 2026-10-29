@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pathways Program Explorer</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,7 +45,43 @@ button { font: inherit; color: inherit; }
 .brand { font: 800 22px var(--display); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 8px; }
 .brand svg { width: 26px; height: 26px; }
 nav { display: flex; gap: 4px; flex-wrap: wrap; }
-@media (max-width: 520px) { .top .col { gap: 6px; } nav { flex-wrap: nowrap; overflow-x: auto; width: 100%; } nav a { white-space: nowrap; padding: 6px 10px; } }
+nav .ni { display: none; }
+nav .short { display: none; }
+/* Phones: the main sections move to a tab bar along the bottom, the way phone apps do, so every
+   section is one tap away and nothing scrolls sideways. Text and tap targets get bigger. */
+@media (max-width: 640px) {
+  body { font-size: 17px; }
+  .top .col { padding-block: 8px; }
+  .brand { font-size: 20px; }
+  nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 7; background: var(--surface); border-top: 1px solid var(--line);
+        display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; padding: 4px 2px calc(4px + env(safe-area-inset-bottom, 0px)); }
+  nav a { display: grid; justify-items: center; gap: 2px; padding: 6px 0 4px; border-radius: 10px; font-size: 11px; font-weight: 600; text-align: center; position: relative; min-height: 48px; }
+  nav .ni { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .top nav a[aria-current="page"] { background: none; color: var(--accent); }
+  .top nav a[aria-current="page"] .ni { stroke-width: 2.4; }
+  nav .long { display: none; } nav .short { display: inline; }
+  nav .count { position: absolute; top: 2px; right: 8px; margin: 0; }
+  main { padding-block: 18px 40px; }
+  footer { padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
+  html .tray { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); padding-block: 8px; }
+  html .tray .btn { min-height: 38px; padding-block: 6px; }
+  html table.cmp { min-width: 0; table-layout: fixed; }
+  html table.cmp th, html table.cmp td { padding: 10px 8px; font-size: 15px; overflow-wrap: break-word; hyphens: auto; }
+  html table.cmp th[scope="row"] { width: 30%; font-size: 13px; }
+  .panel { padding: 16px; }
+  .small { font-size: 15px; }
+  .chip { font-size: 14px; padding: 5px 11px; }
+  .btn, .add, .seg button { min-height: 40px; }
+  .seg button { font-size: 15px; padding: 6px 14px; }
+  .prefs { grid-template-columns: 1fr; }
+  .prefs .lbl, .panel h3.h { font-size: 14px; }
+  .detail-head h1 { font-size: 30px; line-height: 1.12; }
+  h1 { line-height: 1.12; }
+  input, select, textarea { font-size: 16px !important; }
+  #fadd { max-width: 100% !important; width: 100%; }
+  .figures { grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+  .fig .n { font-size: 24px; }
+}
 nav a { text-decoration: none; color: var(--muted); font-weight: 600; padding: 6px 12px; border-radius: 999px; }
 nav a[aria-current="page"] { background: var(--accent-soft); color: var(--ink); }
 nav .count { font: 500 12px var(--mono); background: var(--spark); color: #1a1a1a; border-radius: 999px; padding: 0 6px; margin-left: 4px; }
@@ -308,12 +348,12 @@ ul.exact a { margin-left: 6px; }
       Pathways
     </a>
     <nav aria-label="Main">
-      <a href="#home" data-view="home">Home</a>
-      <a href="#fit" data-view="fit">Find your fit</a>
-      <a href="#majors" data-view="majors">Majors</a>
-      <a href="#careers" data-view="careers">Careers</a>
-      <a href="#programs" data-view="programs">Programs</a>
-      <a href="#compare" data-view="compare">Compare<span class="count" id="navCount" hidden></span></a>
+      <a href="#home" data-view="home"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg>Home</a>
+      <a href="#fit" data-view="fit"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4z"/></svg><span class="long">Find your fit</span><span class="short">Your fit</span></a>
+      <a href="#majors" data-view="majors"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4zm3 3v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>Majors</a>
+      <a href="#careers" data-view="careers"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM9 8V5h6v3"/></svg>Careers</a>
+      <a href="#programs" data-view="programs"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6M6 10v8M10 10v8M14 10v8M18 10v8M3 20h18"/></svg>Programs</a>
+      <a href="#compare" data-view="compare"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-11M3 21h18"/></svg>Compare<span class="count" id="navCount" hidden></span></a>
     </nav>
   </div>
 </header>
